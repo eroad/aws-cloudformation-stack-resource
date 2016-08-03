@@ -125,6 +125,8 @@ fi
 
 REM 'applying new stack configuration'
 
+ret=0
+
 aws cloudformation $STACK_ACTION \
   $CAPABILITIES_ARG $PARAMETERS_ARG $TAGS_ARG \
   --stack-name="$STACK_NAME" \
