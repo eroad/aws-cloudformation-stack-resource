@@ -140,6 +140,7 @@ else
   REM "An error occured:"
   REM "STDERR: $(cat /tmp/aws-stderr)"
   REM "STDOUT: $(cat /tmp/result)"
+  REM "exit $ret"
   exit $ret
 fi
 
