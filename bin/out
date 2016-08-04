@@ -133,8 +133,10 @@ aws cloudformation $STACK_ACTION \
   --template-body="file://$TEMPLATE" \
   > /tmp/result 2> /tmp/aws-stderr || ret=$?
 
-MESSAGE="An error occurred (ValidationError) when calling the UpdateStack operation: No updates are to be performed."
-if [ $ret -eq 255 ] && [ "$(cat /tmp/aws-stderr | xargs)" == "$MESSAGE" ]; then
+NO_UPDATE="An error occurred (ValidationError) when calling the UpdateStack operation: No updates are to be performed."
+if [ $ret -eq 0 ]; then
+  REM "$STACK_ACTION issued"
+elif [ $ret -eq 255 ] && [ "$(cat /tmp/aws-stderr | xargs)" == "$NO_UPDATE" ]; then
   REM "No updates are to be performed"
 else
   REM "An error occured:"
