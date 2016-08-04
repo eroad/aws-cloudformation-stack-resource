@@ -137,7 +137,9 @@ MESSAGE="An error occurred (ValidationError) when calling the UpdateStack operat
 if [ $ret -eq 255 ] && [ "$(cat /tmp/aws-stderr | xargs)" == "$MESSAGE" ]; then
   REM "No updates are to be performed"
 else
-  REM "An error occured: $(cat /tmp/aws-stderr)"
+  REM "An error occured:"
+  REM "STDERR: $(cat /tmp/aws-stderr)"
+  REM "STDOUT: $(cat /tmp/result)"
   exit $ret
 fi
 
