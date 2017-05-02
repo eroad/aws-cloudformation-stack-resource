@@ -112,11 +112,7 @@ TAGS=$( jq -r '.params.tags // ""' < /tmp/stdin )
 TAGS_ARG=''
 
 if [ -n "$TAGS" ] ; then
-  jq -c 'to_entries |  sort_by(.key) | map({ "Key": .key, "Value": .value })' \
-    < "$TAGS" \
-    > /tmp/tags
-  
-  TAGS_ARG='--tags=file:///tmp/tags'
+  TAGS_ARG="--tags=file://${TAGS}"
 fi
 
 #
