@@ -101,8 +101,6 @@ resources:
     type: "aws-cloudformation-stack"
     source:
       name: {{test_stack}}
-      access_key: {{test_access_key}}
-      secret_key: {{test_secret_key}}
       region: {{test_region}}
   - name: "resource-image"
     type: "docker-image"

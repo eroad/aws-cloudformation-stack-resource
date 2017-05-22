@@ -6,8 +6,6 @@ A [Concourse](http://concourse.ci) resource to manage your [AWS CloudFormation](
 ## Source Configuration
 
  * **`name`** - the stack name
- * **`access_key`** - AWS access key
- * **`secret_key`** - AWS secret key
  * `region` - the region to manage the stack (default `us-east-1`)
 
 
@@ -81,8 +79,6 @@ The following example uses a repository to store configuration and, whenever the
         type: "aws-cloudformation-stack"
         source:
           name: "my-acme-stack-name"
-          access_key: "my-aws-access-key"
-          secret_key: "my-aws-secret-key"
       
       # a repository to version your configuration
       - name: "acme-config"
