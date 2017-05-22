@@ -18,8 +18,6 @@ fatal () {
 load_env () {
   export $( cat | tee /tmp/stdin | jq -r '
     "STACK_NAME=" + .source.name,
-    "AWS_ACCESS_KEY_ID=" + .source.access_key,
-    "AWS_SECRET_ACCESS_KEY=" + .source.secret_key,
     "AWS_DEFAULT_REGION=" + ( .source.region // "us-east-1" ),
     "VERSION=" + ( .version | tojson | tostring // "" ),
     "VERSION_ARN=" + ( .version.arn // "" ),
