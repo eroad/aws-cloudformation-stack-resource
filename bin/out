@@ -19,7 +19,7 @@ if [ "true" = "$( jq -r '.params.delete' < /tmp/stdin )" ] ; then
   TIMED_OUT=true
   
   for s in $( seq 1440 ) ; do
-    sleep 5
+    sleep 30
     
     load_stack
     
@@ -147,7 +147,7 @@ REM 'waiting for completion'
 TIMED_OUT=true
 
 for s in $( seq 1440 ) ; do
-  sleep 5
+  sleep 30
   
   load_stack
   
