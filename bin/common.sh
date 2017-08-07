@@ -2,7 +2,7 @@
 
 exec 3>&1
 exec 1>&2
-set -eu
+set -eux
 
 [ ! -e /tmp/build/* ] || cd /tmp/build/*
 
