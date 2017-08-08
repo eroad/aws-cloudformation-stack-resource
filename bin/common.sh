@@ -31,7 +31,7 @@ load_stack () {
   REM 'checking stack'
   
   ( aws cloudformation describe-stacks --stack-name="$STACK_NAME" 2>&1 || true ) \
-    > /tmp/stack
+    | tee /tmp/stack
 
   if grep -qE 'Stack with id [^ ]+ does not exist' /tmp/stack ; then
     if [ "true" = "${1:-true}" ] ; then
