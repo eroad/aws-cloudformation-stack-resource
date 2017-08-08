@@ -30,23 +30,34 @@ load_stack () {
   
   REM 'checking stack'
   
-  ( aws cloudformation describe-stacks --stack-name="$STACK_NAME" 2>&1 || true ) \
-    | tee /tmp/stack
+  for i in $(seq 20); do
+    echo "Attempt $i of 20"
+    ( aws cloudformation describe-stacks --stack-name="$STACK_NAME" 2>&1 || true ) \
+      | tee /tmp/stack
 
-  if grep -qE 'Stack with id [^ ]+ does not exist' /tmp/stack ; then
-    if [ "true" = "${1:-true}" ] ; then
-      fatal 'stack missing'
-    fi
-    
-    if [ -z "$VERSION_ARN" ] ; then
-      VERSION_ARN=$( date -u +"%Y-%m-%dT%H:%M:%SZ" )
-    fi
+    if grep -qE 'Stack with id [^ ]+ does not exist' /tmp/stack ; then
+      if [ "true" = "${1:-true}" ] ; then
+        fatal 'stack missing'
+      fi
       
-    jq -c -n \
-      --arg arn "$VERSION_ARN" \
-      '{"Stacks": [ { "StackId": $arn, "StackStatus": "DELETE_COMPLETE", "LastUpdatedTime": "DELETED" } ] }' \
-      > /tmp/stack
-  fi
+      if [ -z "$VERSION_ARN" ] ; then
+        VERSION_ARN=$( date -u +"%Y-%m-%dT%H:%M:%SZ" )
+      fi
+        
+      jq -c -n \
+        --arg arn "$VERSION_ARN" \
+        '{"Stacks": [ { "StackId": $arn, "StackStatus": "DELETE_COMPLETE", "LastUpdatedTime": "DELETED" } ] }' \
+        > /tmp/stack
+      return
+    fi
+
+    if jq '.' /tmp/stack; then
+      return
+    fi
+
+    sleep 30
+  done
+
 }
 
 is_stack_completed () {
