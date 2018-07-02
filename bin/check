@@ -14,16 +14,16 @@ if [ -n "${AWS_ACCESS_KEY_ID}" ] && [ -n "${AWS_SECRET_ACCESS_KEY}" ]; then
     export AWS_SECRET_ACCESS_KEY
 fi
 
-stack_name="$(echo "${input}" | jq -r '.source.name // empty')"
+name="$(echo "${input}" | jq -r '.source.name // empty')"
 region="$(echo "${input}" | jq -r '.source.region // "us-east-1"')"
 arn="$(echo "${input}" | jq -r '.version.arn? // empty')"
 time="$(echo "${input}" | jq -r '.version.time? // empty')"
 
-if [ -z "${stack_name}" ]; then
-    echo "Must specify 'stack_name' in source"
+if [ -z "${name}" ]; then
+    echo "Must specify 'name' in source"
     exit 1
 fi
-output="$(load_stack "${region}" "${stack_name}")"
+output="$(load_stack "${region}" "${name}")"
 status="$?"
 
 if [ "${status}" -ne 0 ]; then

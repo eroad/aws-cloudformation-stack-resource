@@ -40,7 +40,7 @@ update_in_progress() {
 
 
 load_stack() {
-  stacks="$(aws_with_retry --region "$1" cloudformation describe-stacks --stack-name="$2")"
+  stacks=$(aws_with_retry --region "${1}" cloudformation describe-stacks --stack-name="${2}")
   status="$?"
   if [ "${status}" -ne 0 ]; then
     echo "${stacks}"
@@ -52,7 +52,7 @@ load_stack() {
 aws_with_retry(){
     timeout=1
     for i in $(seq "${retries}"); do
-        reason=$(aws "$@")
+        reason="$(aws $@ 2>&1)"
         status=$?
         if [ "$status" -eq 0 ] || ! echo "$reason" | grep -q 'Rate exceeded' ; then
              echo "$reason"
@@ -91,8 +91,7 @@ awaitStart(){
         output="$(load_stack "${1}" "${2}")"
         status=$?
         if [ "$status" -ne 0 ]; then
-            echo "$output"
-            if echo "$output" | grep -Eq 'Stack with id [^ ]+ does not exist' ; then
+            if $(echo "$output" | grep -Eq "Stack with id ${2} does not exist") ; then
                 return 0
             else
                 return "$status"
