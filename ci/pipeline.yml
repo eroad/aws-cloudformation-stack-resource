@@ -76,24 +76,6 @@ jobs:
               skip_download: true
       - task: test
         file: repo/ci/test-check-in/task.yml
-  - name: test-delete
-    serial: true
-    plan:
-      - aggregate:
-          - get: repo
-            passed: [test-check-in]
-          - get: test-stack
-            trigger: true
-            passed: [test-check-in]
-          - get: resource-image
-            passed: [test-check-in]
-            params:
-              skip_download: true
-      - put: test-stack
-        params:
-          delete: true
-        get_params:
-          allow_deleted: true
   - name: promote-candidate
     serial: true
     plan:

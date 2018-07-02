@@ -26,10 +26,6 @@ Pulls down stack outputs, resource IDs, and metadata.
  * `/outputs.json` - a JSON object with the stack [outputs](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/outputs-section-structure.html)
  * `/resources.json` - a JSON object with the logical IDs of all created resources (resource name + `Id` is the key). Names of security groups are also set (resource name + `Name`)
 
-Parameters:
-
- * `allow_deleted` - by default the resource will fail when referencing a deleted stack (default `false`)
-
 
 ### `out`
 

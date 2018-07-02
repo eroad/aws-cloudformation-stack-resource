@@ -21,28 +21,10 @@ parameters="$(echo "$input" | jq -r '.params.parameters // empty')"
 parameters_aws="$(echo "$input" | jq -r '.params.parameters_aws // empty')"
 tags="$(echo "$input" | jq -r '.params.tags // empty')"
 capabilities="$(echo "$input" | jq -r '.params.capabilities // empty')"
-delete="$(echo "$input" | jq -r '.params.delete // empty' | tr '[:upper:]' '[:lower:]')"
 
 if [ -z "$name" ]; then
     echo "Must specify 'name' parameter"
     exit 1
-fi
-
-if [ "$delete" = "true" ]; then
-    echo "DELETING STACK $name"
-    echo ""
-    output="$(aws_with_retry --region "$region" cloudformation delete-stack --stack-name "$name")"
-    status="$?"
-    if [ "$status" -ne 0 ]; then
-        echo "STACK DELETION FAILED"
-        echo ""
-        echo "$output"
-        exit "$status"
-    fi
-    echo "DELETED STACK $name"
-    new_version="$(jq -c -n -r '{}')";
-    echo "$new_version" >&3
-    exit 0
 fi
 
 if [ -z "$template" ]; then
