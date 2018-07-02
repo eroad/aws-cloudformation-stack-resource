@@ -5,7 +5,7 @@ exec 1>&2 # redirect all output to stderr for logging
 . $(dirname $0)/functions.sh
 
 
-input=$(cat)
+input="$(cat)"
 
 AWS_ACCESS_KEY_ID="$(echo "$input" | jq -r '.source.access_key // empty')"
 AWS_SECRET_ACCESS_KEY="$(echo "$input" | jq -r '.source.secret_key // empty')"
