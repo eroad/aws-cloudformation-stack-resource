@@ -7,25 +7,25 @@ exec 1>&2 # redirect all output to stderr for logging
 
 input=$(cat)
 
-AWS_ACCESS_KEY_ID="$(echo "${input}" | jq -r '.source.access_key // empty')"
-AWS_SECRET_ACCESS_KEY="$(echo "${input}" | jq -r '.source.secret_key // empty')"
-if [ -n "${AWS_ACCESS_KEY_ID}" ] && [ -n "${AWS_SECRET_ACCESS_KEY}" ]; then
+AWS_ACCESS_KEY_ID="$(echo "$input" | jq -r '.source.access_key // empty')"
+AWS_SECRET_ACCESS_KEY="$(echo "$input" | jq -r '.source.secret_key // empty')"
+if [ -n "$AWS_ACCESS_KEY_ID" ] && [ -n "$AWS_SECRET_ACCESS_KEY" ]; then
     export AWS_ACCESS_KEY_ID
     export AWS_SECRET_ACCESS_KEY
 fi
 
-name="$(echo "${input}" | jq -r '.source.name // empty')"
-region="$(echo "${input}" | jq -r '.source.region // "us-east-1"')"
-arn="$(echo "${input}" | jq -r '.version.arn')"
-time="$(echo "${input}" | jq -r '.version.time')"
-allow_deleted="$(echo "${input}" | jq -r '.params.allow_deleted // empty' | tr '[:upper:]' '[:lower:]')"
+name="$(echo "$input" | jq -r '.source.name // empty')"
+region="$(echo "$input" | jq -r '.source.region // "us-east-1"')"
+arn="$(echo "$input" | jq -r '.version.arn')"
+time="$(echo "$input" | jq -r '.version.time')"
+allow_deleted="$(echo "$input" | jq -r '.params.allow_deleted // empty' | tr '[:upper:]' '[:lower:]')"
 
-if [ -z "${name}" ]; then
+if [ -z "$name" ]; then
     echo "Must specify 'name' in source"
     exit 1
 fi
 
-if [ -z "${arn}" ] || [ -z "${time}" ]; then
+if [ -z "$arn" ] || [ -z "$time" ]; then
     echo "Version is not available!"
     exit 1
 fi
@@ -34,61 +34,61 @@ fi
 cd "$1"
 
 
-output="$(load_stack "${region}" "${name}")"
+output="$(load_stack "$region" "$name")"
 status="$?"
-if [ "${status}" -ne 0 ]; then
-    echo "${output}"
+if [ "$status" -ne 0 ]; then
+    echo "$output"
     exit "$status"
 fi
 
-if is_stack_deleted "${output}"; then
-    if [ "${allow_deleted}" != "true" ]; then
+if is_stack_deleted "$output"; then
+    if [ "$allow_deleted" != "true" ]; then
         echo "Stack is deleted!"
         exit 1
     fi
     touch deleted
 else
 
-    if ! is_stack_completed "${output}"; then
+    if ! is_stack_completed "$output"; then
         echo "Stack is currently updating!"
         exit 1
     fi
 
-    current_arn=$(echo "${output}" | jq -r '.StackId')
-    current_time=$(echo "${output}" | jq -r '.LastUpdatedTime // .CreationTime')
+    current_arn=$(echo "$output" | jq -r '.StackId')
+    current_time=$(echo "$output" | jq -r '.LastUpdatedTime // .CreationTime')
 
 
-    if [ "${arn}" != "${current_arn}" ] || [ "${time}" != "${current_time}" ]; then
+    if [ "$arn" != "$current_arn" ] || [ "$time" != "$current_time" ]; then
 
         echo "ERROR: Stack has updated since last check"
         echo ""
         echo "Expected:"
-        echo "Arn: ${arn}"
-        echo "Updated Time: ${time}"
+        echo "Arn: $arn"
+        echo "Updated Time: $time"
         echo ""
         echo "Actual:"
-        echo "Arn: ${arn}"
-        echo "Updated Time: ${current_time}"
+        echo "Arn: $arn"
+        echo "Updated Time: $current_time"
         exit 1
     fi
 
 
-    echo "${output}" | jq -r '.StackId'  > arn.txt
+    echo "$output" | jq -r '.StackId'  > arn.txt
 
-    echo "${output}" | jq -r '[(.Outputs // [])[] | { "key": .OutputKey, "value": .OutputValue }] | from_entries // {}' > outputs.json
+    echo "$output" | jq -r '[(.Outputs // [])[] | { "key": .OutputKey, "value": .OutputValue }] | from_entries // {}' > outputs.json
 
     (
-        aws_with_retry --region "${region}" cloudformation describe-stack-resources --stack-name="${name}" \
+        aws_with_retry --region "$region" cloudformation describe-stack-resources --stack-name="$name" \
             | jq -r '.StackResources[] | { "key": (.LogicalResourceId+"Id"), "value": .PhysicalResourceId }'
 
-       aws_with_retry ec2 --region "${region}" describe-security-groups --filters Name=tag-key,Values=aws:cloudformation:stack-name Name=tag-value,Values="${name}" \
+       aws_with_retry ec2 --region "$region" describe-security-groups --filters Name=tag-key,Values=aws:cloudformation:stack-name Name=tag-value,Values="$name" \
         | jq -r '.SecurityGroups[] | { "name" : .GroupName, "tags" : .Tags | map({ "key" : .Key, "value" : .Value }) | from_entries } | { "key": (.tags["aws:cloudformation:logical-id"] + "Name"), "value": .name }'
     ) | jq -s -r  '. | from_entries // {}' > resources.json
 
 fi
-status="$(echo "${output}" | jq -r '.StackStatus')"
+status="$(echo "$output" | jq -r '.StackStatus')"
 
-jq -n -c -r --arg version_arn "${arn}" --arg version_time "${time}" --arg status "${status}" '
+jq -n -c -r --arg version_arn "$arn" --arg version_time "$time" --arg status "$status" '
   {
     "version": {
         "arn": $version_arn,

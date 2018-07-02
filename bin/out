@@ -6,87 +6,88 @@ exec 1>&2 # redirect all output to stderr for logging
 
 input=$(cat)
 
-AWS_ACCESS_KEY_ID="$(echo "${input}" | jq -r '.source.access_key // empty')"
-AWS_SECRET_ACCESS_KEY="$(echo "${input}" | jq -r '.source.secret_key // empty')"
-if [ -n "${AWS_ACCESS_KEY_ID}" ] && [ -n "${AWS_SECRET_ACCESS_KEY}" ]; then
+AWS_ACCESS_KEY_ID="$(echo "$input" | jq -r '.source.access_key // empty')"
+AWS_SECRET_ACCESS_KEY="$(echo "$input" | jq -r '.source.secret_key // empty')"
+if [ -n "$AWS_ACCESS_KEY_ID" ] && [ -n "$AWS_SECRET_ACCESS_KEY" ]; then
     export AWS_ACCESS_KEY_ID
     export AWS_SECRET_ACCESS_KEY
 fi
 
-name="$(echo "${input}" | jq -r '.source.name // empty')"
-region="$(echo "${input}" | jq -r '.source.region // "us-east-1"')"
-template="$(echo "${input}" | jq -r '.params.template // empty')"
-parameters="$(echo "${input}" | jq -r '.params.parameters // empty')"
-parameters_aws="$(echo "${input}" | jq -r '.params.parameters_aws // empty')"
-tags="$(echo "${input}" | jq -r '.params.tags // empty')"
-capabilities="$(echo "${input}" | jq -r '.params.capabilities // empty')"
-delete="$(echo "${input}" | jq -r '.params.delete // empty' | tr '[:upper:]' '[:lower:]')"
+name="$(echo "$input" | jq -r '.source.name // empty')"
+region="$(echo "$input" | jq -r '.source.region // "us-east-1"')"
+template="$(echo "$input" | jq -r '.params.template // empty')"
+parameters="$(echo "$input" | jq -r '.params.parameters // empty')"
+parameters_aws="$(echo "$input" | jq -r '.params.parameters_aws // empty')"
+tags="$(echo "$input" | jq -r '.params.tags // empty')"
+capabilities="$(echo "$input" | jq -r '.params.capabilities // empty')"
+delete="$(echo "$input" | jq -r '.params.delete // empty' | tr '[:upper:]' '[:lower:]')"
 
-if [ -z "${name}" ]; then
+if [ -z "$name" ]; then
     echo "Must specify 'name' parameter"
     exit 1
 fi
 
-if [ "${delete}" = "true" ]; then
-    echo "DELETING STACK ${name}"
+if [ "$delete" = "true" ]; then
+    echo "DELETING STACK $name"
     echo ""
-    output="$(aws_with_retry --region "${region}" cloudformation delete-stack --stack-name "${name}")"
+    output="$(aws_with_retry --region "$region" cloudformation delete-stack --stack-name "$name")"
     status="$?"
-    if [ "${status}" -ne 0 ]; then
+    if [ "$status" -ne 0 ]; then
         echo "STACK DELETION FAILED"
         echo ""
-        echo "${output}"
-        exit "${status}"
+        echo "$output"
+        exit "$status"
     fi
-    echo "DELETED STACK ${name}"
+    echo "DELETED STACK $name"
     exit 0
 fi
 
-if [ -z "${template}" ]; then
+if [ -z "$template" ]; then
     echo "Must specify 'template' parameter"
     exit 1
 fi
 
 parameters_property=""
-if [ -n "${parameters}" ]; then
-    if [ ! -f "${parameters}" ]; then
+if [ -n "$parameters" ]; then
+    if [ ! -f "$parameters" ]; then
         echo "Parameter file does not exist"
         exit 1
     fi
-    parameters_property="--parameter-overrides $(jq -c -r 'to_entries | sort_by(.key) | map(.key + "=" + .value) | join (" ")' < "${parameters}")"
-elif [ -n "${parameters_aws}" ]; then
-    if [ ! -f "${parameters_aws}" ]; then
+    parameters_property="--parameter-overrides $(jq -c -r 'to_entries | sort_by(.key) | map(.key + "=" + .value) | join (" ")' < "$parameters")"
+elif [ -n "$parameters_aws" ]; then
+    if [ ! -f "$parameters_aws" ]; then
         echo "Parameter file does not exist"
         exit 1
     fi
-    parameters_property="--parameter-overrides $(jq -c -r 'map(.ParameterKey + "=" + .ParameterValue) | join (" ")' < "${parameters_aws}")"
+    parameters_property="--parameter-overrides $(jq -c -r 'map(.ParameterKey + "=" + .ParameterValue) | join (" ")' < "$parameters_aws")"
 fi
 
 tags_property=""
-if [ -n "${tags}" ]; then
-    if [ ! -f "${tags}" ]; then
+if [ -n "$tags" ]; then
+    if [ ! -f "$tags" ]; then
         echo "Tags file does not exist"
         exit 1
     fi
-    tags_property="--tags $(jq -c -r 'map(.Key + "=" + .Value) | join (" ")' < "${tags}")"
+    tags_property="--tags $(jq -c -r 'map(.Key + "=" + .Value) | join (" ")' < "$tags")"
 fi
 
 capabilities_property=""
-if [ -n "${capabilities}" ]; then
-    capabilities_property="--capabilities ${capabilities}"
+if [ -n "$capabilities" ]; then
+    capabilities_property="--capabilities $capabilities"
 fi
 
-echo "TEMPLATE: ${template}, REGION: ${region}, CAPABILITIES: ${capabilities}, NAME: ${name}, PARAMETERS_AWS: ${parameters_aws}, PARAMETERS: ${parameters}, TAGS_FILE: ${tags}";
+echo "TEMPLATE: $template, REGION: $region, CAPABILITIES: $capabilities, NAME: $name, PARAMETERS_AWS: $parameters_aws, PARAMETERS: $parameters, TAGS_FILE: $tags";
 echo ""
-echo "BEGINNING DEPLOYMENT PROCESS FOR STACK ${name}"
+echo "BEGINNING DEPLOYMENT PROCESS FOR STACK $name"
 echo ""
 echo "PRE-DEPLOY STATE:"
-awaitStart "${region}" "${name}"
-status="$?"
+echo ""
+awaitStart "$region" "$name"
+awaitStart "$region" "$name"
 if [ "$?" -eq 0 ]; then
     echo ""
     echo "DEPLOY STATE:"
-    output=$(aws_with_retry --region "${region}" cloudformation deploy --stack-name "${name}" --template-file "${template}" ${parameters_property} ${tags_property} ${capabilities})
+    output=$(aws_with_retry --region "$region" cloudformation deploy --stack-name "$name" --template-file "$template" "$parameters_property" "$tags_property" "$capabilities")
     exit_code=$?
     if [ "$exit_code" -ne 0 ] && echo "$output" | grep -q 'No changes to deploy.'; then
         exit_code=0
@@ -94,17 +95,17 @@ if [ "$?" -eq 0 ]; then
     if [ "$exit_code" -ne 0 ]; then
         echo ""
         echo "DEPLOY FAILED:"
-        showErrors "${region}" "${name}"
+        showErrors "$region" "$name"
         echo ""
         echo "POST-FAILED-DEPLOY STATE:"
-        awaitComplete "${region}" "${name}"
+        awaitComplete "$region" "$name"
         exit "$exit_code"
     else
         echo ""
         echo "POST-DEPLOY STATE:"
-        output="$(awaitComplete "${region}" "${name}")"
+        output="$(awaitComplete "$region" "$name")"
         exit_code="$?"
-        echo "${output}"
+        echo "$output"
         echo ""
         if [ "$exit_code" -ne 0 ]; then
             echo "DEPLOYMENT FAILED"

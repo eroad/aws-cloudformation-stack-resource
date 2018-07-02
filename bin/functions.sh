@@ -40,18 +40,18 @@ update_in_progress() {
 
 
 load_stack() {
-  stacks=$(aws_with_retry --region "${1}" cloudformation describe-stacks --stack-name="${2}")
+  stacks=$(aws_with_retry --region "$1" cloudformation describe-stacks --stack-name="$2")
   status="$?"
-  if [ "${status}" -ne 0 ]; then
-    echo "${stacks}"
-    return "${status}"
+  if [ "$status" -ne 0 ]; then
+    echo "$stacks"
+    return "$status"
   fi
-  echo "${stacks}" | jq '.Stacks[0]'
+  echo "$stacks" | jq '.Stacks[0]'
 }
 
 aws_with_retry(){
     timeout=1
-    for i in $(seq "${retries}"); do
+    for i in $(seq "$retries"); do
         reason="$(aws $@ 2>&1)"
         status=$?
         if [ "$status" -eq 0 ] || ! echo "$reason" | grep -q 'Rate exceeded' ; then
@@ -59,7 +59,7 @@ aws_with_retry(){
              return "$status"
         fi
         timeout=$(bc <<< "scale=4; $timeout * (1.5 + $RANDOM / 32767)")
-        sleep ${timeout}
+        sleep "$timeout"
     done
     echo "$reason"
     return "$status"
@@ -67,9 +67,8 @@ aws_with_retry(){
 
 awaitComplete(){
     for i in $(seq 20); do
-        output="$(load_stack "${1}" "${2}")"
-
-        status=$?
+        output="$(load_stack "$1" "$2")"
+        status="$?"
         if [ "$status" -ne 0 ]; then
             echo "$output"
             return "$status"
@@ -88,12 +87,14 @@ awaitComplete(){
 
 awaitStart(){
     for i in $(seq 20); do
-        output="$(load_stack "${1}" "${2}")"
-        status=$?
+        output="$(load_stack "$1" "$2")"
+        status="$?"
         if [ "$status" -ne 0 ]; then
-            if $(echo "$output" | grep -Eq "Stack with id ${2} does not exist") ; then
+            if $(echo "$output" | grep -Eq "Stack with id $2 does not exist") ; then
+                echo "Stack $2 does not exist"
                 return 0
             else
+                echo "$output"
                 return "$status"
             fi
         elif ! update_in_progress "$output" ; then
@@ -107,7 +108,7 @@ awaitStart(){
 }
 
 showErrors(){
-    events=$(aws_with_retry --region "${1}" cloudformation describe-stack-events --stack-name "${2}")
+    events=$(aws_with_retry --region "$1" cloudformation describe-stack-events --stack-name "$2")
     status="$?"
     if [ "$status" -eq 0 ]; then
         echo "$events" | jq '.StackEvents[] | select(.ResourceStatus | contains("FAILED")) | select(.Timestamp > (now - 450 | todate))'
