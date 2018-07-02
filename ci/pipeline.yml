@@ -1,130 +1,108 @@
 resource_types:
-  - name: "aws-cloudformation-stack"
-    type: "docker-image"
+  - name: aws-cloudformation-stack
+    type: docker-image
     source:
-      repository: {{images_repo}}
-      tag: {{repo_branch}}
-      insecure_registries: [{{images_insecure_registries}}]
+      repository: eroadltd/aws-cloudformation-stack-resource
+      tag: alpha
 
 resources:
-  - name: "repo"
-    type: "git"
+  - name: repo
+    type: git
     source:
-      uri: {{repo_uri}}
-      branch: {{repo_branch}}
-      private_key: {{repo_key}}
-  - name: "test-stack"
-    type: "aws-cloudformation-stack"
+      uri: https://github.com/eroad/aws-cloudformation-stack-resource.git
+      branch: master
+      username: {{github-username}}
+      password: {{github-password}}
+      ignore_paths: ['ci/*', 'README.md']
+  - name: test-stack
+    type: aws-cloudformation-stack
     source:
-      name: {{test_stack}}
-      region: {{test_region}}
-  - name: "resource-image"
-    type: "docker-image"
+      name: dev-test-deploy-stack
+      region: ap-southeast-2
+  - name: resource-image
+    type: docker-image
     source:
-      repository: {{images_repo}}
-      tag: {{repo_branch}}
-      insecure_registries: [{{images_insecure_registries}}]
+      repository: eroadltd/aws-cloudformation-stack-resource
+      tag: alpha
+      username: {{docker-username}}
+      password: {{docker-password}}
 
-  - name: "repo-candidate"
-    type: "git"
+  - name: resource-image-release
+    type: docker-image
     source:
-      uri: {{repo_uri}}
-      branch: {{repo_branch_candidate}}
-      private_key: {{repo_key}}
-  - name: "resource-image-candidate"
-    type: "docker-image"
-    source:
-      repository: {{images_repo}}
-      tag: {{repo_branch_candidate}}
-      insecure_registries: [{{images_insecure_registries}}]
-
+      repository: eroadltd/aws-cloudformation-stack-resource
+      tag: release
+      username: {{docker-username}}
+      password: {{docker-password}}
 jobs:
-  - name: "build-resource"
+  - name: build-resource
     serial: true
     plan:
-      - get: "repo"
+      - get: repo
         trigger: true
-      - put: "resource-image"
+      - put: resource-image
         params:
-          build: "repo"
+          build: repo
         get_params:
           skip_download: true
-  - name: "test-out"
+  - name: test-out
     serial: true
     plan:
       - aggregate:
-          - get: "repo"
+          - get: repo
             trigger: true
-            passed:
-              - "build-resource"
-          - get: "resource-image"
-            passed:
-              - "build-resource"
+            passed: [build-resource]
+          - get: resource-image
+            passed: [build-resource]
             params:
               skip_download: true
-      - put: "test-stack"
+      - put: test-stack
         params:
-          template: "repo/ci/test-stack/template.json"
-          parameters: "repo/ci/test-stack/parameters.json"
-          tags: "repo/ci/test-stack/tags.json"
-  - name: "test-check-in"
+          template: repo/ci/test-stack/template.json
+          parameters: repo/ci/test-stack/parameters.json
+          tags: repo/ci/test-stack/tags.json
+  - name: test-check-in
     serial: true
     plan:
       - aggregate:
-          - get: "repo"
-            passed:
-              - "test-out"
-          - get: "test-stack"
+          - get: repo
+            passed: [test-out]
+          - get: test-stack
             trigger: true
-            passed:
-              - "test-out"
-          - get: "resource-image"
-            passed:
-              - "test-out"
+            passed: [test-out]
+          - get: resource-image
+            passed: [test-out]
             params:
               skip_download: true
-      - task: "test"
-        file: "repo/ci/test-check-in/task.yml"
-  - name: "test-delete"
+      - task: test
+        file: repo/ci/test-check-in/task.yml
+  - name: test-delete
     serial: true
     plan:
       - aggregate:
-          - get: "repo"
-            passed:
-              - "test-check-in"
-          - get: "test-stack"
+          - get: repo
+            passed: [test-check-in]
+          - get: test-stack
             trigger: true
-            passed:
-              - "test-check-in"
-          - get: "resource-image"
-            passed:
-              - "test-check-in"
+            passed: [test-check-in]
+          - get: resource-image
+            passed: [test-check-in]
             params:
               skip_download: true
-      - put: "test-stack"
+      - put: test-stack
         params:
           delete: true
         get_params:
           allow_deleted: true
-  - name: "promote-candidate"
+  - name: promote-candidate
     serial: true
     plan:
       - aggregate:
-          - get: "repo"
-            trigger: true
-            passed:
-              - "test-delete"
-          - get: "resource-image"
-            passed:
-              - "test-delete"
+          - get: resource-image
+            passed: [test-delete]
             params:
               save: true
-      - aggregate:
-        - put: "repo-candidate"
-          params:
-            repository: "repo"
-        - put: "resource-image-candidate"
-          params:
-            import_file: "resource-image/image"
-          get_params:
-            skip_download: true
+      - put: resource-image-release
+        params:
+          import_file: resource-image
+          tag_as_latest: true

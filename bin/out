@@ -7,18 +7,13 @@ exec 1>&2 # redirect all output to stderr for logging
 input=$(cat)
 
 stack_name="$(echo "${input}" | jq -r '.source.name // empty')"
-region="$(echo "${input}" | jq -r '.source.region // empty')"
+region="$(echo "${input}" | jq -r '.source.region // "us-east-1"')"
 template="$(echo "${input}" | jq -r '.params.template // empty')"
 parameters="$(echo "${input}" | jq -r '.params.parameters // empty')"
 parameters_aws="$(echo "${input}" | jq -r '.params.parameters_aws // empty')"
 tags="$(echo "${input}" | jq -r '.params.tags // empty')"
 capabilities="$(echo "${input}" | jq -r '.params.capabilities // empty')"
 delete="$(echo "${input}" | jq -r '.params.delete // empty' | tr '[:upper:]' '[:lower:]')"
-
-if [ -z "${region}" ]; then
-    echo "Must specify 'region' in source"
-    exit 1
-fi
 
 if [ -z "${stack_name}" ]; then
     echo "Must specify 'stack_name' parameter"
