@@ -81,7 +81,7 @@ jobs:
     plan:
       - aggregate:
           - get: resource-image
-            passed: [test-delete]
+            passed: [test-check-in]
             params:
               save: true
       - put: resource-image-release
