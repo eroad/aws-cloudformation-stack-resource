@@ -26,8 +26,18 @@ output="$(load_stack "$region" "$name")"
 status="$?"
 
 if [ "$status" -ne 0 ]; then
-    echo "$output"
-    exit "$status"
+    if is_stack_not_exist "$output" "$2"; then
+        jq -n -c -r '[]' >&3
+        exit 0
+    else
+        echo "$output"
+        exit "$status"
+    fi
+fi
+
+if [ ! is_stack_completed "$output" ] || [ is_stack_recently_deleted "$output" ]; then
+    jq -n -c -r '[]' >&3
+    exit 0
 fi
 
 new_arn="$(echo "$output" | jq -r '.StackId')"

@@ -11,13 +11,18 @@ is_stack_completed() {
   return "$exit_code"
 }
 
-is_stack_deleted() {
+is_stack_recently_deleted() {
   status="$(echo "$1" | jq  -c -r '.StackStatus')"
   exit_code=1
   case "$status" in
     DELETE_COMPLETE) exit_code=0 ;;
   esac
   return "$exit_code"
+}
+
+is_stack_not_exist() {
+    echo "$1" | grep -Eq "Stack with id $2 does not exist"
+    return "$?"
 }
 
 is_stack_errored() {
@@ -90,7 +95,7 @@ awaitStart(){
         output="$(load_stack "$1" "$2")"
         status="$?"
         if [ "$status" -ne 0 ]; then
-            if $(echo "$output" | grep -Eq "Stack with id $2 does not exist") ; then
+            if is_stack_not_exist "$output" "$2" ; then
                 echo "Stack $2 does not exist"
                 return 0
             else
