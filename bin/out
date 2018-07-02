@@ -92,9 +92,11 @@ awaitStart "$region" "$name"
 if [ "$?" -eq 0 ]; then
     echo ""
     echo "DEPLOY STATE:"
+    echo ""
     output=$(aws_with_retry --region "$region" cloudformation deploy --stack-name "$name" --template-file "$template" "$parameters_property" "$tags_property" "$capabilities")
     exit_code=$?
     if [ "$exit_code" -ne 0 ] && echo "$output" | grep -q 'No changes to deploy.'; then
+        echo "No changes to deploy"
         exit_code=0
     fi
     if [ "$exit_code" -ne 0 ]; then
@@ -117,7 +119,7 @@ if [ "$?" -eq 0 ]; then
             exit "$exit_code"
         else
             echo "DEPLOYMENT COMPLETE"
-            new_version=$(echo "$output" | jq -c r '{ "version": { "arn" : .StackId, "time" : ( .LastUpdatedTime // .CreationTime ) } }');
+            new_version=$(echo "$output" | jq -c -r '{ "version": { "arn" : .StackId, "time" : ( .LastUpdatedTime // .CreationTime ) } }');
             echo "$new_version" >&3
             exit 0
         fi
