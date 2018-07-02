@@ -1,0 +1,12 @@
+---
+platform: "linux"
+image_resource:
+  type: "docker-image"
+  source:
+    repository: "eroadltd/aws-cloudformation-stack-resource"
+    tag: latest
+inputs:
+  - name: "repo"
+  - name: "test-stack"
+run:
+  path: "repo/ci/delete-stack/run.sh"
