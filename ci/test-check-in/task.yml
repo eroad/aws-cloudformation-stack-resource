@@ -8,4 +8,4 @@ inputs:
   - name: "repo"
   - name: "test-stack"
 run:
-  path: "repo/ci/pipelines/main/test-check-in/run.sh"
+  path: "repo/ci/test-check-in/run.sh"
