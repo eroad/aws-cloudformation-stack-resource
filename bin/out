@@ -47,16 +47,21 @@ if [ -z "$template" ]; then
     exit 1
 fi
 
+if [ ! -f "$template" ]; then
+    echo "Template file $template does not exist"
+    exit 1
+fi
+
 parameters_property=""
 if [ -n "$parameters" ]; then
     if [ ! -f "$parameters" ]; then
-        echo "Parameter file does not exist"
+        echo "Parameter file $parameters does not exist"
         exit 1
     fi
     parameters_property="--parameter-overrides $(jq -c -r 'to_entries | sort_by(.key) | map(.key + "=" + .value) | join (" ")' < "$parameters")"
 elif [ -n "$parameters_aws" ]; then
     if [ ! -f "$parameters_aws" ]; then
-        echo "Parameter file does not exist"
+        echo "Parameter file $parameters_aws does not exist"
         exit 1
     fi
     parameters_property="--parameter-overrides $(jq -c -r 'map(.ParameterKey + "=" + .ParameterValue) | join (" ")' < "$parameters_aws")"
