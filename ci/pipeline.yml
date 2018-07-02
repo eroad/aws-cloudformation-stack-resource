@@ -1,4 +1,43 @@
----  
+resource_types:
+  - name: "aws-cloudformation-stack"
+    type: "docker-image"
+    source:
+      repository: {{images_repo}}
+      tag: {{repo_branch}}
+      insecure_registries: [{{images_insecure_registries}}]
+
+resources:
+  - name: "repo"
+    type: "git"
+    source:
+      uri: {{repo_uri}}
+      branch: {{repo_branch}}
+      private_key: {{repo_key}}
+  - name: "test-stack"
+    type: "aws-cloudformation-stack"
+    source:
+      name: {{test_stack}}
+      region: {{test_region}}
+  - name: "resource-image"
+    type: "docker-image"
+    source:
+      repository: {{images_repo}}
+      tag: {{repo_branch}}
+      insecure_registries: [{{images_insecure_registries}}]
+
+  - name: "repo-candidate"
+    type: "git"
+    source:
+      uri: {{repo_uri}}
+      branch: {{repo_branch_candidate}}
+      private_key: {{repo_key}}
+  - name: "resource-image-candidate"
+    type: "docker-image"
+    source:
+      repository: {{images_repo}}
+      tag: {{repo_branch_candidate}}
+      insecure_registries: [{{images_insecure_registries}}]
+
 jobs:
   - name: "build-resource"
     serial: true
@@ -25,9 +64,9 @@ jobs:
               skip_download: true
       - put: "test-stack"
         params:
-          template: "repo/ci/pipelines/main/test-stack/template.json"
-          parameters: "repo/ci/pipelines/main/test-stack/parameters.json"
-          tags: "repo/ci/pipelines/main/test-stack/tags.json"
+          template: "repo/ci/test-stack/template.json"
+          parameters: "repo/ci/test-stack/parameters.json"
+          tags: "repo/ci/test-stack/tags.json"
   - name: "test-check-in"
     serial: true
     plan:
@@ -45,7 +84,7 @@ jobs:
             params:
               skip_download: true
       - task: "test"
-        file: "repo/ci/pipelines/main/test-check-in/task.yml"
+        file: "repo/ci/test-check-in/task.yml"
   - name: "test-delete"
     serial: true
     plan:
@@ -89,43 +128,3 @@ jobs:
             import_file: "resource-image/image"
           get_params:
             skip_download: true
-
-resources:
-  - name: "repo"
-    type: "git"
-    source:
-      uri: {{repo_uri}}
-      branch: {{repo_branch}}
-      private_key: {{repo_key}}
-  - name: "test-stack"
-    type: "aws-cloudformation-stack"
-    source:
-      name: {{test_stack}}
-      region: {{test_region}}
-  - name: "resource-image"
-    type: "docker-image"
-    source:
-      repository: {{images_repo}}
-      tag: {{repo_branch}}
-      insecure_registries: [{{images_insecure_registries}}]
-
-  - name: "repo-candidate"
-    type: "git"
-    source:
-      uri: {{repo_uri}}
-      branch: {{repo_branch_candidate}}
-      private_key: {{repo_key}}
-  - name: "resource-image-candidate"
-    type: "docker-image"
-    source:
-      repository: {{images_repo}}
-      tag: {{repo_branch_candidate}}
-      insecure_registries: [{{images_insecure_registries}}]
-
-resource_types:
-  - name: "aws-cloudformation-stack"
-    type: "docker-image"
-    source:
-      repository: {{images_repo}}
-      tag: {{repo_branch}}
-      insecure_registries: [{{images_insecure_registries}}]
