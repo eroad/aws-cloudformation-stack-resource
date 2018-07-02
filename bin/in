@@ -4,8 +4,8 @@ exec 3>&1 # make stdout available as fd 3 for the result
 exec 1>&2 # redirect all output to stderr for logging
 . $(dirname $0)/functions.sh
 
-
 input="$(cat)"
+cd "$1"
 
 AWS_ACCESS_KEY_ID="$(echo "$input" | jq -r '.source.access_key // empty')"
 AWS_SECRET_ACCESS_KEY="$(echo "$input" | jq -r '.source.secret_key // empty')"
@@ -29,10 +29,6 @@ if [ -z "$arn" ] || [ -z "$time" ]; then
     echo "Version is not available!"
     exit 1
 fi
-
-
-cd "$1"
-
 
 output="$(load_stack "$region" "$name")"
 status="$?"
