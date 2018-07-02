@@ -6,8 +6,8 @@ A [Concourse](http://concourse.ci) resource to manage your [AWS CloudFormation](
 ## Source Configuration
 
  * **`name`** - the stack name
- * **`access_key`** - AWS access key
- * **`secret_key`** - AWS secret key
+ * `access_key` - AWS access key (if not using EC2 IAM profile)
+ * `secret_key` - AWS secret key (if not using EC2 IAM profile)
  * `region` - the region to manage the stack (default `us-east-1`)
 
 
@@ -37,6 +37,7 @@ Create, update, or delete the stack. The `parameters` and `tags` data should by 
 
  * **`template`** - path to a CloudFormation template (do not configure when enabling `delete`)
  * `parameters` - path to a JSON file
+ * `parameters_aws` - path to a aws cloudformation formatted JSON file
  * `tags` - path to a JSON file
  * `capabilities` - array of additional [capabilities](http://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/API_CreateStack.html) (e.g. `CAPABILITY_IAM`)
  * `delete` - set to `true` to delete the stack (default `false`)
@@ -80,8 +81,6 @@ The following example uses a repository to store configuration and, whenever the
         type: "aws-cloudformation-stack"
         source:
           name: "my-acme-stack-name"
-          access_key: "my-aws-access-key"
-          secret_key: "my-aws-secret-key"
       
       # a repository to version your configuration
       - name: "acme-config"

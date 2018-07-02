@@ -1,5 +1,4 @@
-FROM alpine
-RUN apk --no-cache add py-pip curl ca-certificates \
-  && pip install awscli \
-  && curl -Ls https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64 > /usr/bin/jq && chmod +x /usr/bin/jq
+FROM alpine:3.7
+RUN apk --no-cache add py-pip curl ca-certificates jq bc bash && \
+    pip install awscli
 ADD bin /opt/resource

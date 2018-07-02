@@ -1,160 +1,119 @@
-#!/bin/sh
+#!/bin/bash
 
-. $(dirname $0)/common.sh
+exec 3>&1 # make stdout available as fd 3 for the result
+exec 1>&2 # redirect all output to stderr for logging
+. $(dirname $0)/functions.sh
 
-load_env
+input=$(cat)
 
-if [ "true" = "$( jq -r '.params.delete' < /tmp/stdin )" ] ; then
-  load_stack
+AWS_ACCESS_KEY_ID="$(echo "${input}" | jq -r '.source.access_key // empty')"
+AWS_SECRET_ACCESS_KEY="$(echo "${input}" | jq -r '.source.secret_key // empty')"
+if [ -n "${AWS_ACCESS_KEY_ID}" ] && [ -n "${AWS_SECRET_ACCESS_KEY}" ]; then
+    export AWS_ACCESS_KEY_ID
+    export AWS_SECRET_ACCESS_KEY
+fi
 
-  REM 'deleting stack'
-  
-  aws cloudformation delete-stack --stack-name "$STACK_NAME" \
-    > /tmp/result
-  
-  REM 'waiting for completion'
-  
-  export STACK_NAME=$( jqstack '.Stacks[0].StackId' )
-  
-  TIMED_OUT=true
-  
-  for s in $( seq 360 ) ; do
-    sleep 5
-    
-    load_stack
-    
-    if is_stack_completed ; then
-      TIMED_OUT=''
-      break
-    elif is_stack_errored ; then
-      fatal "delete-stack failed: $( jqstack '.Stacks[0].StackStatusReason' )"
+stack_name="$(echo "${input}" | jq -r '.source.name // empty')"
+region="$(echo "${input}" | jq -r '.source.region // "us-east-1"')"
+template="$(echo "${input}" | jq -r '.params.template // empty')"
+parameters="$(echo "${input}" | jq -r '.params.parameters // empty')"
+parameters_aws="$(echo "${input}" | jq -r '.params.parameters_aws // empty')"
+tags="$(echo "${input}" | jq -r '.params.tags // empty')"
+capabilities="$(echo "${input}" | jq -r '.params.capabilities // empty')"
+delete="$(echo "${input}" | jq -r '.params.delete // empty' | tr '[:upper:]' '[:lower:]')"
+
+if [ -z "${stack_name}" ]; then
+    echo "Must specify 'stack_name' parameter"
+    exit 1
+fi
+
+if [ "${delete}" = "true" ]; then
+    echo "DELETING STACK ${stack_name}"
+    echo ""
+    output="$(aws_with_retry --region "${region}" cloudformation delete-stack --stack-name "${stack_name}")"
+    status="$?"
+    if [ "${status}" -ne 0 ]; then
+        echo "STACK DELETION FAILED"
+        echo ""
+        echo "${output}"
+        exit "${status}"
     fi
-  done
-  
-  if [ -n "$TIMED_OUT" ] ; then
-    fatal "delete-stack timed out"
-  fi
-  
-  REM 'completed'
-  
-  jq -c -n \
-    --arg arn "$STACK_NAME" \
-    '{ "version": { "arn": $arn, "time": "DELETED" } }' >&3
-  
-  exit
+    echo "DELETED STACK ${stack_name}"
+    exit 0
 fi
 
-###
-REM 'looking for stack'
-###
-
-( aws cloudformation get-template --stack-name "$STACK_NAME" 2>/dev/null || echo '{"TemplateBody":{}}' ) \
-  | jq -r -S '.TemplateBody' \
-  > /tmp/stack-template-old.sorted
-
-TEMPLATE=$( jq -r '.params.template' < /tmp/stdin )
-
-jq -S '.' \
-  < "$TEMPLATE" \
-  > /tmp/stack-template-new.sorted
-
-if [ $( stat -c "%s" /tmp/stack-template-old.sorted ) -gt 3 ] ; then
-  load_stack
-  STACK_ACTION=update-stack
-  jqstack '[ .Stacks[0].Parameters // [] | sort_by(.ParameterKey) | .[] | { "ParameterKey": .ParameterKey, "ParameterValue": .ParameterValue } ]' \
-    > /tmp/stack-parameters-old
-  
-  REM "found stack $( jqstack '.Stacks[0].StackId' )"
-else
-  STACK_ACTION=create-stack
-  echo '{}' > /tmp/stack-parameters-old
-  
-  REM 'no stack found'
+if [ -z "${template}" ]; then
+    echo "Must specify 'template' parameter"
+    exit 1
 fi
 
-#
-# parameters
-#
-
-PARAMETERS=$( jq -r '.params.parameters // ""' < /tmp/stdin )
-PARAMETERS_ARG=''
-
-if [ -n "$PARAMETERS" ] ; then
-  jq -c 'to_entries | sort_by(.key) | map({ "ParameterKey": .key, "ParameterValue": .value })' \
-    < "$PARAMETERS" \
-    > /tmp/stack-parameters-new
-  
-  PARAMETERS_ARG='--parameters=file:///tmp/stack-parameters-new'
-else
-  echo '[]' > /tmp/stack-parameters-new
-fi
-
-#
-# capabilities
-#
-
-CAPABILITIES=$( jq -r '( .params.capabilities // []) | join(" ")' < /tmp/stdin )
-CAPABILITIES_ARG=''
-
-if [ -n "$CAPABILITIES" ] ; then
-  CAPABILITIES_ARG="--capabilities=$CAPABILITIES"
-fi
-
-#
-# tags
-#
-
-TAGS=$( jq -r '.params.tags // ""' < /tmp/stdin )
-TAGS_ARG=''
-
-if [ -n "$TAGS" ] ; then
-  jq -c 'to_entries |  sort_by(.key) | map({ "Key": .key, "Value": .value })' \
-    < "$TAGS" \
-    > /tmp/tags
-  
-  TAGS_ARG='--tags=file:///tmp/tags'
-fi
-
-#
-# execute
-#
-
-if ! cmp -s /tmp/stack-template-old.sorted /tmp/stack-template-new.sorted \
-|| ! cmp -s /tmp/stack-parameters-old /tmp/stack-parameters-new ; then
-  REM 'applying new stack configuration'
-  
-  aws cloudformation $STACK_ACTION \
-    $CAPABILITIES_ARG $PARAMETERS_ARG $TAGS_ARG \
-    --stack-name="$STACK_NAME" \
-    --template-body="file://$TEMPLATE" \
-    > /tmp/result
-  
-  REM 'waiting for completion'
-  
-  TIMED_OUT=true
-  
-  for s in $( seq 360 ) ; do
-    sleep 5
-    
-    load_stack
-    
-    if is_stack_completed ; then
-      TIMED_OUT=''
-      break
-    elif is_stack_errored ; then
-      fatal "$STACK_ACTION failed: $( jqstack '.Stacks[0].StackStatusReason' )"
+parameters_property=""
+if [ -n "${parameters}" ]; then
+    if [ ! -f "${parameters}" ]; then
+        echo "Parameter file does not exist"
+        exit 1
     fi
-  done
-  
-  if [ -n "$TIMED_OUT" ] ; then
-    fatal "$STACK_ACTION timed out"
-  fi
-  
-  REM 'completed'
+    parameters_property="--parameter-overrides $(jq -c -r 'to_entries | sort_by(.key) | map(.key + "=" + .value) | join (" ")' < "${parameters}")"
+elif [ -n "${parameters_aws}" ]; then
+    if [ ! -f "${parameters_aws}" ]; then
+        echo "Parameter file does not exist"
+        exit 1
+    fi
+    parameters_property="--parameter-overrides $(jq -c -r 'map(.ParameterKey + "=" + .ParameterValue) | join (" ")' < "${parameters_aws}")"
 fi
 
-#
-# version
-#
+tags_property=""
+if [ -n "${tags}" ]; then
+    if [ ! -f "${tags}" ]; then
+        echo "Tags file does not exist"
+        exit 1
+    fi
+    tags_property="--tags $(jq -c -r 'map(.Key + "=" + .Value) | join (" ")' < "${tags}")"
+fi
 
-jqstack '.Stacks[0] | { "version": { "arn" : .StackId, "time" : ( .LastUpdatedTime // .CreationTime ) } }' >&3
+capabilities_property=""
+if [ -n "${capabilities}" ]; then
+    capabilities_property="--capabilities ${capabilities}"
+fi
+
+echo "TEMPLATE: ${template}, REGION: ${region}, CAPABILITIES: ${capabilities}, STACK_NAME: ${stack_name}, PARAMETERS_AWS: ${parameters_aws}, PARAMETERS: ${parameters}, TAGS_FILE: ${tags}";
+echo ""
+echo "BEGINNING DEPLOYMENT PROCESS FOR STACK ${stack_name}"
+echo ""
+echo "PRE-DEPLOY STATE:"
+awaitStart "${region}" "${stack_name}"
+if [ $? -eq 0 ]; then
+    echo ""
+    echo "DEPLOY STATE:"
+    output=$(aws_with_retry --region "${region}" cloudformation deploy --stack-name "${stack_name}" --template-file "${template}" ${parameters_property} ${tags_property} ${capabilities})
+    exit_code=$?
+    if [ "$exit_code" -ne 0 ] && echo "$output" | grep -q 'No changes to deploy.'; then
+        exit_code=0
+    fi
+    echo "$output"
+    if [ "$exit_code" -ne 0 ]; then
+        echo ""
+        echo "DEPLOY FAILED:"
+        showErrors "${region}" "${stack_name}"
+        echo ""
+        echo "POST-FAILED-DEPLOY STATE:"
+        awaitComplete "${region}" "${stack_name}"
+        exit "$exit_code"
+    else
+        echo ""
+        echo "POST-DEPLOY STATE:"
+        output="$(awaitComplete "${region}" "${stack_name}")"
+        exit_code="$?"
+        echo "${output}"
+        echo ""
+        if [ "$exit_code" -ne 0 ]; then
+            echo "DEPLOYMENT FAILED"
+            exit "$exit_code"
+        else
+            echo "DEPLOYMENT COMPLETE"
+            new_version=$(echo "$output" | jq -c r '{ "version": { "arn" : .StackId, "time" : ( .LastUpdatedTime // .CreationTime ) } }');
+            echo "$new_version" >&3
+            exit 0
+        fi
+    fi
+fi

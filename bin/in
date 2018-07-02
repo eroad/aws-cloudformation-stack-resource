@@ -1,52 +1,99 @@
-#!/bin/sh
+#!/bin/bash
 
-. $(dirname $0)/common.sh
+exec 3>&1 # make stdout available as fd 3 for the result
+exec 1>&2 # redirect all output to stderr for logging
+. $(dirname $0)/functions.sh
 
-cd $1
 
-load_env
-load_stack false
+input=$(cat)
 
-if [ "DELETED" = "$( jqstack '.Stacks[0].LastUpdatedTime' )" ]; then
-  jq -e 'true == ( .params.allow_deleted // false )' < /tmp/stdin > /dev/null \
-    || fatal 'stack is deleted'
-  
-  REM 'stack does not exist'
-  
-  touch deleted
-else
-  is_stack_completed \
-    || fatal 'stack mutating'
-
-  [ "$VERSION" = "$( jqstack '.Stacks[0] | { "arn": .StackId, "time": ( .LastUpdatedTime // .CreationTime ) }' )" ] \
-    || fatal "stack mutated"
-
-  jqstack '.Stacks[0].StackId' \
-    > arn.txt
-
-  REM 'loading outputs'
-
-  jqstack '[(.Stacks[0].Outputs // [])[] | { "key": .OutputKey, "value": .OutputValue }] | from_entries // {}' \
-    > outputs.json
-
-  REM 'loading resources'
-
-  (
-    aws cloudformation describe-stack-resources --stack-name="$STACK_NAME" \
-      | jq '.StackResources[] | { "key": (.LogicalResourceId+"Id"), "value": .PhysicalResourceId }'
-
-    aws ec2 describe-security-groups --filters Name=tag-key,Values=aws:cloudformation:stack-name Name=tag-value,Values="$STACK_NAME" \
-      | jq '.SecurityGroups[] | { "name" : .GroupName, "tags" : .Tags | map({ "key" : .Key, "value" : .Value }) | from_entries } | { "key": (.tags["aws:cloudformation:logical-id"] + "Name"), "value": .name }'
-  ) \
-    | jq -s '. | from_entries // {}' \
-    > resources.json
+AWS_ACCESS_KEY_ID="$(echo "${input}" | jq -r '.source.access_key // empty')"
+AWS_SECRET_ACCESS_KEY="$(echo "${input}" | jq -r '.source.secret_key // empty')"
+if [ -n "${AWS_ACCESS_KEY_ID}" ] && [ -n "${AWS_SECRET_ACCESS_KEY}" ]; then
+    export AWS_ACCESS_KEY_ID
+    export AWS_SECRET_ACCESS_KEY
 fi
 
-jq -n -c \
-  --arg ref "$VERSION" \
-  --arg status "$( jqstack '.Stacks[0].StackStatus' )" '
+stack_name="$(echo "${input}" | jq -r '.source.name // empty')"
+region="$(echo "${input}" | jq -r '.source.region // "us-east-1"')"
+arn="$(echo "${input}" | jq -r '.version.arn')"
+time="$(echo "${input}" | jq -r '.version.time')"
+allow_deleted="$(echo "${input}" | jq -r '.params.allow_deleted // empty' | tr '[:upper:]' '[:lower:]')"
+
+if [ -z "${stack_name}" ]; then
+    echo "Must specify 'stack_name' in source"
+    exit 1
+fi
+
+if [ -z "${arn}" ] || [ -z "${time}" ]; then
+    echo "Version is not available!"
+    exit 1
+fi
+
+
+cd "$1"
+
+
+output="$(load_stack "${region}" "${stack_name}")"
+status="$?"
+if [ "${status}" -ne 0 ]; then
+    echo "${output}"
+    exit "$status"
+fi
+
+if is_stack_deleted "${output}"; then
+    if [ "${allow_deleted}" != "true" ]; then
+        echo "Stack is deleted!"
+        exit 1
+    fi
+    touch deleted
+else
+
+    if ! is_stack_completed "${output}"; then
+        echo "Stack is currently updating!"
+        exit 1
+    fi
+
+    current_arn=$(echo "${output}" | jq -r '.StackId')
+    current_time=$(echo "${output}" | jq -r '.LastUpdatedTime // .CreationTime')
+
+
+    if [ "${arn}" != "${current_arn}" ] || [ "${time}" != "${current_time}" ]; then
+
+        echo "ERROR: Stack has updated since last check"
+        echo ""
+        echo "Expected:"
+        echo "Arn: ${arn}"
+        echo "Updated Time: ${time}"
+        echo ""
+        echo "Actual:"
+        echo "Arn: ${arn}"
+        echo "Updated Time: ${current_time}"
+        exit 1
+    fi
+
+
+    echo "${output}" | jq -r '.StackId'  > arn.txt
+
+    echo "${output}" | jq -r '[(.Outputs // [])[] | { "key": .OutputKey, "value": .OutputValue }] | from_entries // {}' > outputs.json
+
+    (
+        aws_with_retry --region "${region}" cloudformation describe-stack-resources --stack-name="${stack_name}" \
+            | jq -r '.StackResources[] | { "key": (.LogicalResourceId+"Id"), "value": .PhysicalResourceId }'
+
+       aws ec2 describe-security-groups --region "${region}" --filters Name=tag-key,Values=aws:cloudformation:stack-name Name=tag-value,Values="${stack_name}" \
+        | jq -r '.SecurityGroups[] | { "name" : .GroupName, "tags" : .Tags | map({ "key" : .Key, "value" : .Value }) | from_entries } | { "key": (.tags["aws:cloudformation:logical-id"] + "Name"), "value": .name }'
+    ) | jq -s -r  '. | from_entries // {}' > resources.json
+
+fi
+status="$(echo "${output}" | jq -r '.StackStatus')"
+
+jq -n -c -r --arg version_arn "${arn}" --arg version_time "${time}" --arg status "${status}" '
   {
-    "version": ( $ref | fromjson ),
+    "version": {
+        "arn": $version_arn,
+        "time": $version_time
+    },
     "metadata": [
       {
         "name": "status",
