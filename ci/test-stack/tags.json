@@ -1,4 +1,10 @@
-{
-  "Tag1": "Value1",
-  "Tag2": "Value2"
-}
+[
+  {
+    "Key": "environment",
+    "Value": "dev"
+  },
+  {
+    "Key": "role",
+    "Value": "aws-cloudformation-resource-test"
+  }
+]

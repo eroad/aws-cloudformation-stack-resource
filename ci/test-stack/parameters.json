@@ -1,4 +1,1 @@
-{
-  "Param1": "Value1",
-  "Param2": "Value2"
-}
+[{"ParameterKey":"TestQueueName","ParameterValue":"aws-cloudformation-stack-test"}]

@@ -89,7 +89,6 @@ echo ""
 echo "PRE-DEPLOY STATE:"
 echo ""
 awaitStart "$region" "$name"
-awaitStart "$region" "$name"
 if [ "$?" -eq 0 ]; then
     echo ""
     echo "DEPLOY STATE:"

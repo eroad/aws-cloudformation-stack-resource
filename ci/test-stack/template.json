@@ -1,10 +1,7 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
   "Parameters": {
-    "Param1": {
-      "Type": "String"
-    },
-    "Param2": {
+    "TestQueueName": {
       "Type": "String"
     }
   },
@@ -16,62 +13,9 @@
         "MaximumMessageSize": 1024,
         "MessageRetentionPeriod": 60,
         "QueueName": {
-          "Ref": "Param1"
+          "Ref": "TestQueueName"
         },
         "VisibilityTimeout": 30
-      }
-    },
-    "Vpc": {
-      "Type": "AWS::EC2::VPC",
-      "Properties": {
-        "CidrBlock": "10.0.0.0/24"
-      }
-    },
-    "VpcSecurityGroup": {
-      "Type": "AWS::EC2::SecurityGroup",
-      "Properties": {
-        "GroupDescription": {
-          "Ref": "Param2"
-        },
-        "SecurityGroupEgress": [
-          {
-            "CidrIp": "10.0.0.0/24",
-            "FromPort": 0,
-            "IpProtocol": "tcp",
-            "ToPort": 1024
-          }
-        ],
-        "SecurityGroupIngress": [
-          {
-            "CidrIp": "10.0.0.0/24",
-            "FromPort": 0,
-            "IpProtocol": "tcp",
-            "ToPort": 1024
-          }
-        ],
-        "VpcId": {
-          "Ref": "Vpc"
-        }
-      }
-    }
-  },
-  "Outputs": {
-    "VpcSecurityGroupOutputGroupId": {
-      "Value": {
-        "Fn::Join": [
-          "/",
-          [
-            {
-              "Ref": "Param2"
-            },
-            {
-              "Fn::GetAtt": [
-                "VpcSecurityGroup",
-                "GroupId"
-              ]
-            }
-          ]
-        ]
       }
     }
   }
