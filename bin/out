@@ -40,6 +40,8 @@ if [ "$delete" = "true" ]; then
         exit "$status"
     fi
     echo "DELETED STACK $name"
+    new_version="$(jq -c -n -r '{}')";
+    echo "$new_version" >&3
     exit 0
 fi
 
@@ -91,6 +93,7 @@ echo ""
 awaitStart "$region" "$name"
 if [ "$?" -eq 0 ]; then
     echo ""
+    echo ""
     echo "DEPLOY STATE:"
     echo ""
     output=$(aws_with_retry --region "$region" cloudformation deploy --stack-name "$name" --template-file "$template" "$parameters_property" "$tags_property" "$capabilities")
@@ -99,27 +102,31 @@ if [ "$?" -eq 0 ]; then
         echo "No changes to deploy"
         exit_code=0
     fi
+    echo ""
+    echo ""
     if [ "$exit_code" -ne 0 ]; then
-        echo ""
         echo "DEPLOY FAILED:"
         showErrors "$region" "$name"
         echo ""
+        echo ""
         echo "POST-FAILED-DEPLOY STATE:"
+        echo ""
         awaitComplete "$region" "$name"
         exit "$exit_code"
     else
-        echo ""
         echo "POST-DEPLOY STATE:"
+        echo ""
         output="$(awaitComplete "$region" "$name")"
         exit_code="$?"
         echo "$output"
+        echo ""
         echo ""
         if [ "$exit_code" -ne 0 ]; then
             echo "DEPLOYMENT FAILED"
             exit "$exit_code"
         else
             echo "DEPLOYMENT COMPLETE"
-            new_version=$(echo "$output" | jq -c -r '{ "version": { "arn" : .StackId, "time" : ( .LastUpdatedTime // .CreationTime ) } }');
+            new_version="$(echo "$output" | jq -c -r '{ "version": { "arn" : .StackId, "time" : ( .LastUpdatedTime // .CreationTime ) } }')";
             echo "$new_version" >&3
             exit 0
         fi
