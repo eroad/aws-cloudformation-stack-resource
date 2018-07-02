@@ -35,7 +35,7 @@ if [ "$status" -ne 0 ]; then
     fi
 fi
 
-if [ ! is_stack_completed "$output" ] || [ is_stack_recently_deleted "$output" ]; then
+if ! is_stack_completed "$output" || is_stack_recently_deleted "$output"; then
     jq -n -c -r '[]' >&3
     exit 0
 fi
