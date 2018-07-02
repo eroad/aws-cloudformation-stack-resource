@@ -6,6 +6,8 @@ A [Concourse](http://concourse.ci) resource to manage your [AWS CloudFormation](
 ## Source Configuration
 
  * **`name`** - the stack name
+ * `access_key` - AWS access key (if not using EC2 IAM profile)
+ * `secret_key` - AWS secret key (if not using EC2 IAM profile)
  * `region` - the region to manage the stack (default `us-east-1`)
 
 

@@ -7,6 +7,12 @@ exec 1>&2 # redirect all output to stderr for logging
 
 input=$(cat)
 
+AWS_ACCESS_KEY_ID="$(echo "${input}" | jq -r '.source.access_key // empty')"
+AWS_SECRET_ACCESS_KEY="$(echo "${input}" | jq -r '.source.secret_key // empty')"
+if [ -n "${AWS_ACCESS_KEY_ID}" ] && [ -n "${AWS_SECRET_ACCESS_KEY}" ]; then
+    export AWS_ACCESS_KEY_ID
+    export AWS_SECRET_ACCESS_KEY
+fi
 
 stack_name="$(echo "${input}" | jq -r '.source.name // empty')"
 region="$(echo "${input}" | jq -r '.source.region // "us-east-1"')"
