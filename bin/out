@@ -40,6 +40,8 @@ if [ "$delete" = "true" ]; then
         exit "$status"
     fi
     echo "DELETED STACK $name"
+    new_version="$(jq -c -n -r '{}')";
+    echo "$new_version" >&3
     exit 0
 fi
 
@@ -124,7 +126,7 @@ if [ "$?" -eq 0 ]; then
             exit "$exit_code"
         else
             echo "DEPLOYMENT COMPLETE"
-            new_version=$(echo "$output" | jq -c -r '{ "version": { "arn" : .StackId, "time" : ( .LastUpdatedTime // .CreationTime ) } }');
+            new_version="$(echo "$output" | jq -c -r '{ "version": { "arn" : .StackId, "time" : ( .LastUpdatedTime // .CreationTime ) } }')";
             echo "$new_version" >&3
             exit 0
         fi
