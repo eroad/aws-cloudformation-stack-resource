@@ -2,17 +2,17 @@ resource_types:
   - name: aws-cloudformation-stack
     type: docker-image
     source:
-      repository: {{docker-repo}}
-      tag: {{test-tag}}
+      repository: eroadltd/aws-cloudformation-stack-resource
+      tag: alpha
 
 resources:
   - name: repo
     type: git
     source:
-      uri: {{git-repo}}
+      uri: https://github.com/eroad/aws-cloudformation-stack-resource.git
       branch: master
-      username: {{git-username}}
-      password: {{git-password}}
+      username: {{github-username}}
+      password: {{github-password}}
       ignore_paths: ['ci/*', 'README.md']
   - name: test-stack
     type: aws-cloudformation-stack
@@ -22,16 +22,16 @@ resources:
   - name: resource-image
     type: docker-image
     source:
-      repository: {{docker-image-repo}}
-      tag: {{test-tag}}
+      repository: eroadltd/aws-cloudformation-stack-resource
+      tag: alpha
       username: {{docker-username}}
       password: {{docker-password}}
 
   - name: resource-image-release
     type: docker-image
     source:
-      repository: {{docker-image-repo}}
-      tag: {{release-tag}}
+      repository: eroadltd/aws-cloudformation-stack-resource
+      tag: release
       username: {{docker-username}}
       password: {{docker-password}}
 jobs:
