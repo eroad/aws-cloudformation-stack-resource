@@ -78,7 +78,8 @@ if [ "$?" -eq 0 ]; then
     echo ""
     echo "DEPLOY STATE:"
     echo ""
-    output=$(aws_with_retry --region "$region" cloudformation deploy --stack-name "$name" --template-file "$template" ${parameters_property} ${tags_property} ${capabilities})
+    echo "args: --region $region cloudformation deploy --stack-name $name --template-file $template ${parameters_property} ${tags_property} ${capabilities}"
+    output="$(aws_with_retry --region "$region" cloudformation deploy --stack-name "$name" --template-file "$template" ${parameters_property} ${tags_property} ${capabilities})"
     exit_code=$?
     if [ "$exit_code" -ne 0 ] && echo "$output" | grep -q 'No changes to deploy.'; then
         exit_code=0
