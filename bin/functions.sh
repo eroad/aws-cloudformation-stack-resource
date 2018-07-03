@@ -57,7 +57,7 @@ load_stack() {
 aws_with_retry(){
     timeout=1
     for i in $(seq "$retries"); do
-        reason="$(aws $@ 2>&1)"
+        reason="$(aws "$@" 2>&1)"
         status=$?
         if [ "$status" -eq 0 ] || ! echo "$reason" | grep -q 'Rate exceeded' ; then
              echo "$reason"
