@@ -79,7 +79,7 @@ awaitComplete(){
             return "$status"
         elif is_stack_errored "$output" ; then
             echo "$output"
-            return 1
+            return 45
         elif is_stack_completed "$output"; then
             echo "$output"
             return 0
