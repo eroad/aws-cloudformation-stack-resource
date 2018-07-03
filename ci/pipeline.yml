@@ -96,5 +96,5 @@ jobs:
               save: true
       - put: resource-image-release
         params:
-          import_file: resource-image
+          load: resource-image
           tag_as_latest: true
