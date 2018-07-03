@@ -13,7 +13,6 @@ resources:
       branch: master
       username: {{github-username}}
       password: {{github-password}}
-      ignore_paths: ['ci/*', 'README.md']
   - name: test-stack
     type: aws-cloudformation-stack
     source:
