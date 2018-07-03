@@ -63,7 +63,7 @@ fi
 
 capabilities_property=""
 if [ -n "$capabilities" ]; then
-    capabilities_property="--capabilities $capabilities"
+    capabilities_property="--capabilities $(echo "$capabilities" | jq -c -r 'join (" ")')"
 fi
 
 echo "TEMPLATE: $template, REGION: $region, CAPABILITIES: $capabilities, NAME: $name, PARAMETERS_AWS: $parameters_aws, PARAMETERS: $parameters, TAGS_FILE: $tags";
@@ -78,7 +78,7 @@ if [ "$?" -eq 0 ]; then
     echo ""
     echo "DEPLOY STATE:"
     echo ""
-    output=$(aws_with_retry --region "$region" cloudformation deploy --stack-name "$name" --template-file "$template" $parameters_property $tags_property $capabilities)
+    output=$(aws_with_retry --region "$region" cloudformation deploy --stack-name "$name" --template-file "$template" ${parameters_property} ${tags_property} ${capabilities})
     exit_code=$?
     if [ "$exit_code" -ne 0 ] && echo "$output" | grep -q 'No changes to deploy.'; then
         exit_code=0
