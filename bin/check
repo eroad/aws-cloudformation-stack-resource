@@ -15,8 +15,8 @@ fi
 
 name="$(echo "$input" | jq -r '.source.name // empty')"
 region="$(echo "$input" | jq -r '.source.region // "us-east-1"')"
-arn="$(echo "$input" | jq -r '.version.arn? // empty')"
-time="$(echo "$input" | jq -r '.version.time? // empty')"
+old_arn="$(echo "$input" | jq -r '.version.arn? // empty')"
+old_time="$(echo "$input" | jq -r '.version.time? // empty')"
 
 if [ -z "$name" ]; then
     echo "Must specify 'name' in source"
@@ -35,17 +35,16 @@ if [ "$status" -ne 0 ]; then
     fi
 fi
 
-if is_stack_recently_deleted "$output" || ! is_stack_completed "$output"; then
-    jq -n -c -r '[]' >&3
-    exit 0
-fi
 
 new_arn="$(echo "$output" | jq -r '.StackId')"
 new_time="$(echo "$output" | jq -r '.LastUpdatedTime // .CreationTime')"
 
-
-if [ "$new_arn" != "$arn" ] || [  "$new_time" != "$time" ]; then
+if is_stack_completed "$output" ; then
     jq -n -c -r --arg new_arn "$new_arn" --arg new_time "$new_time" '[{ "arn": $new_arn, "time": $new_time }]' >&3
-else
+elif [ -z "$old_arn" ] || [ -z "$old_time" ] || is_stack_recently_deleted "$output" ; then
+    # if never run (and not yet completed successfully) or recently deleted output no version
     jq -n -c -r '[]' >&3
+else
+    # use old info as only completed stacks are "real" new versions
+    jq -n -c -r --arg old_arn "$old_arn" --arg old_time "$old_time" '[{ "arn": $old_arn, "time": $old_time }]' >&3
 fi
