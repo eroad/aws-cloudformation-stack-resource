@@ -116,7 +116,7 @@ showErrors(){
     events=$(aws_with_retry --region "$1" cloudformation describe-stack-events --stack-name "$2")
     status="$?"
     if [ "$status" -eq 0 ]; then
-        echo "$events" | jq '.StackEvents[] | select(.ResourceStatus | contains("FAILED")) | select(.Timestamp > (now - 450 | todate))'
+        echo "$events" | jq --arg from_before "$3" '.StackEvents[] | select(.ResourceStatus | contains("FAILED")) | select(.Timestamp > ($from_before - 5 | todate))'
     else
         echo "$events"
     fi
