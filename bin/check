@@ -39,9 +39,10 @@ fi
 new_arn="$(echo "$output" | jq -r '.StackId')"
 new_time="$(echo "$output" | jq -r '.LastUpdatedTime // .CreationTime')"
 
-if [ -z "$old_arn" ] || [ -z "$old_time" ] || is_stack_completed "$output" ; then
+if is_stack_completed "$output" ; then
     jq -n -c -r --arg new_arn "$new_arn" --arg new_time "$new_time" '[{ "arn": $new_arn, "time": $new_time }]' >&3
-elif is_stack_recently_deleted "$output" ; then
+elif [ -z "$old_arn" ] || [ -z "$old_time" ] || is_stack_recently_deleted "$output" ; then
+    # if never run (and not yet completed successfully) or recently deleted output no version
     jq -n -c -r '[]' >&3
 else
     # use old info as only completed stacks are "real" new versions
