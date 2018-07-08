@@ -47,14 +47,14 @@ if [ -n "$parameters" ]; then
         echo "$original_version" >&3
         exit 1
     fi
-    parameters_property="--parameter-overrides $(jq -c -r 'to_entries | sort_by(.key) | map(.key + "=" + .value) | join (" ")' < "$parameters")"
+    parameters_property="--parameter-overrides $(jq -c -r 'to_entries | sort_by(.key) | map("\"\(.key)=\(.value)\"") | join (" ")' < "$parameters")"
 elif [ -n "$parameters_aws" ]; then
     if [ ! -f "$parameters_aws" ]; then
         echo "Parameter file $parameters_aws does not exist"
         echo "$original_version" >&3
         exit 1
     fi
-    parameters_property="--parameter-overrides $(jq -c -r 'map(select(has("ParameterValue"))) | map(.ParameterKey + "=" + .ParameterValue) | join (" ")' < "$parameters_aws")"
+    parameters_property="--parameter-overrides $(jq -c -r 'map(select(has("ParameterValue"))) | map("\"\(.ParameterKey)=\(.ParameterValue)\"") | join (" ")' < "$parameters_aws")"
 fi
 
 tags_property=""
@@ -64,7 +64,7 @@ if [ -n "$tags" ]; then
         echo "$original_version" >&3
         exit 1
     fi
-    tags_property="--tags $(jq -c -r 'map(.Key + "=" + .Value) | join (" ")' < "$tags")"
+    tags_property="--tags $(jq -c -r 'map("\"\(.Key)=\(.Value)\"") | join (" ")' < "$tags")"
 fi
 
 capabilities_property=""
