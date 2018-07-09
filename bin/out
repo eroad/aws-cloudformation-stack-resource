@@ -64,7 +64,7 @@ if [ -n "$tags" ]; then
         echo "$original_version" >&3
         exit 1
     fi
-    tags_property="--tags $(jq -c -r 'map("\"\(.Key)=\(.Value)\"") | join (" ")' < "$tags")"
+    tags_property="--tags $(jq -c -r 'map("\(.Key)=\(.Value)") | join (" ")' < "$tags")"
 fi
 
 capabilities_property=""
