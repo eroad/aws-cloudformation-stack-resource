@@ -90,12 +90,9 @@ echo ""
 
 start_epoch="$(date +%s)"
 
-command="aws_with_retry --region $region cloudformation deploy --stack-name $name --template-file $template $parameters_property $tags_property $capabilities_property"
+command="aws_with_retry --region $region cloudformation deploy --no-fail-on-empty-changeset --stack-name $name --template-file $template $parameters_property $tags_property $capabilities_property"
 output="$(eval "${command}")"
 exit_code=$?
-if [ "$exit_code" -ne 0 ] && echo "$output" | grep -q 'No changes to deploy.'; then
-    exit_code=0
-fi
 echo "$output"
 echo ""
 echo ""
