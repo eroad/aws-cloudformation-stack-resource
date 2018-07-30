@@ -90,13 +90,37 @@ echo ""
 
 start_epoch="$(date +%s)"
 
+
 command="aws_with_retry --region $region cloudformation deploy --no-fail-on-empty-changeset --stack-name $name --template-file $template $parameters_property $tags_property $capabilities_property"
 output="$(eval "${command}")"
 exit_code=$?
+
 echo "$output"
 echo ""
 echo ""
-if [ "$exit_code" -ne 0 ]; then
+
+if [ "$exit_code" -eq 0 ]; then
+    if echo "$output" | grep -q 'No changes to deploy.'; then
+        no_changes=true
+    fi
+    echo "POST-DEPLOY STATE:"
+    echo ""
+    output="$(awaitComplete "$region" "$name")"
+    exit_code="$?"
+    echo "$output"
+    echo ""
+    echo ""
+    if [ "$no_changes" = true -a \( "$exit_code" -eq 0 -o "$exit_code" -eq 35 \) ] ; then
+        echo "$original_version" >&3
+        exit_code=0
+    elif [ "$exit_code" -eq 0 ] ; then
+        new_version="$(echo "$output" | jq -c -r '{ "version": { "arn" : .StackId, "time" : ( .LastUpdatedTime // .CreationTime ) } }')";
+        echo "$new_version" >&3
+    else
+        echo "$original_version" >&3
+    fi
+    exit "$exit_code"
+else
     echo "DEPLOY FAILED:"
     showErrors "$region" "$name" "$start_epoch"
     echo ""
@@ -112,20 +136,5 @@ if [ "$exit_code" -ne 0 ]; then
         echo "$original_version" >&3
     fi
     echo "$output"
-    exit "$exit_code"
-else
-    echo "POST-DEPLOY STATE:"
-    echo ""
-    output="$(awaitComplete "$region" "$name")"
-    exit_code="$?"
-    echo "$output"
-    echo ""
-    echo ""
-    if [ "$exit_code" -eq 0 ] ; then
-        new_version="$(echo "$output" | jq -c -r '{ "version": { "arn" : .StackId, "time" : ( .LastUpdatedTime // .CreationTime ) } }')";
-        echo "$new_version" >&3
-    else
-        echo "$original_version" >&3
-    fi
     exit "$exit_code"
 fi
