@@ -101,7 +101,7 @@ echo ""
 
 if [ "$exit_code" -eq 0 ]; then
     if echo "$output" | grep -q 'No changes to deploy.'; then
-        no_changes=true
+        no_changes="true"
     fi
     echo "POST-DEPLOY STATE:"
     echo ""
@@ -110,9 +110,11 @@ if [ "$exit_code" -eq 0 ]; then
     echo "$output"
     echo ""
     echo ""
-    if [ "$no_changes" = true -a \( "$exit_code" -eq 0 -o "$exit_code" -eq 35 \) ] ; then
-        echo "$original_version" >&3
-        exit_code=0
+    if [ "$no_changes" == "true" ]; then
+        if [ "$exit_code" -eq 0 ] || [ "$exit_code" -eq 35 ] ; then
+            echo "$original_version" >&3
+            exit 0
+        fi
     elif [ "$exit_code" -eq 0 ] ; then
         new_version="$(echo "$output" | jq -c -r '{ "version": { "arn" : .StackId, "time" : ( .LastUpdatedTime // .CreationTime ) } }')";
         echo "$new_version" >&3
