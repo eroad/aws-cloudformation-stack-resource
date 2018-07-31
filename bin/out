@@ -113,14 +113,14 @@ if [ "$exit_code" -eq 0 ]; then
     if [ "$no_changes" == "true" ]; then
         if [ "$exit_code" -eq 0 ] || [ "$exit_code" -eq 35 ] ; then
             echo "$original_version" >&3
-            "echo WTF $original_version"
+            echo "WTF $original_version"
             exit 0
         fi
     elif [ "$exit_code" -eq 0 ] ; then
         new_version="$(echo "$output" | jq -c -r '{ "version": { "arn" : .StackId, "time" : ( .LastUpdatedTime // .CreationTime ) } }')";
         echo "$new_version" >&3
     else
-        "echo WTF2 $original_version"
+        echo "WTF2 $original_version"
         echo "$original_version" >&3
     fi
     exit "$exit_code"
