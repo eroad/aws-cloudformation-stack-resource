@@ -41,7 +41,7 @@ if is_stack_recently_deleted "$output"; then
     exit 1
 else
 
-    if ! is_stack_completed "$output"; then
+    if ! is_stack_completed "$output" && ! is_stack_rolled_back "$output"; then
         echo "Stack is currently updating!"
         exit 1
     fi

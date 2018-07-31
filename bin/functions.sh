@@ -29,7 +29,7 @@ is_stack_rolled_back() {
   status="$(echo "$1" | jq -c -r '.StackStatus')"
   exit_code=1
   case "$status" in
-    ROLLBACK_COMPLETE|UPDATE_ROLLBACK_COMPLETE) exit_code=0 ;;
+    UPDATE_ROLLBACK_COMPLETE) exit_code=0 ;;
   esac
   return "$exit_code"
 }
@@ -38,7 +38,7 @@ is_stack_errored() {
   status="$(echo "$1" | jq -c -r '.StackStatus')"
   exit_code=1
   case "$status" in
-    CREATE_FAILED|ROLLBACK_FAILED|DELETE_FAILED|UPDATE_ROLLBACK_FAILED) exit_code=0 ;;
+    CREATE_FAILED|ROLLBACK_FAILED|DELETE_FAILED|UPDATE_ROLLBACK_FAILED|ROLLBACK_COMPLETE) exit_code=0 ;;
   esac
   return "$exit_code"
 }
