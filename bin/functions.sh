@@ -84,8 +84,13 @@ awaitComplete(){
         output="$(load_stack "$1" "$2")"
         status="$?"
         if [ "$status" -ne 0 ]; then
-            echo "$output"
-            return "$status"
+            if is_stack_not_exist "$output" "$2" ; then
+                echo "Stack $2 does not exist"
+                return 25
+            else
+                echo "$output"
+                return "$status"
+           fi
         elif is_stack_rolled_back "$output"; then
             echo "$output"
             return 35
@@ -99,28 +104,6 @@ awaitComplete(){
         sleep 20
     done
     echo "Timed out waiting for deploy completion!"
-    return 255
-}
-
-awaitStart(){
-    for i in $(seq 20); do
-        output="$(load_stack "$1" "$2")"
-        status="$?"
-        if [ "$status" -ne 0 ]; then
-            if is_stack_not_exist "$output" "$2" ; then
-                echo "Stack $2 does not exist"
-                return 0
-            else
-                echo "$output"
-                return "$status"
-            fi
-        elif ! update_in_progress "$output" ; then
-            echo "$output"
-            return 0
-        fi
-        sleep 20
-    done
-    echo "Timed out waiting for deploy start!"
     return 255
 }
 
