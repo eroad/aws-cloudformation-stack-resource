@@ -65,8 +65,7 @@ else
     tags_value=[]
 fi
 
-uuid="$(cat /proc/sys/kernel/random/uuid)"
-name="$(date -I'seconds')"
+
 
 
 
@@ -87,6 +86,8 @@ else
     exit $exit_code"
 fi
 
+uuid="$(cat /proc/sys/kernel/random/uuid)"
+change_set_name="$(date -I'seconds')"
 
 cat << EOF > cli-input.json
 {
@@ -96,7 +97,7 @@ cat << EOF > cli-input.json
     "Parameters": ${parameters_value},
     "Capabilities": ${capabilities},
     "Tags": ${tags_value},
-    "ChangeSetName": "${name}",
+    "ChangeSetName": "${change_set_name}",
     "ClientToken": "${uuid}",
     "ChangeSetType": "${type}"
 }
@@ -106,7 +107,7 @@ echo ""
 echo ""
 echo "DEPLOY STATE:"
 echo ""
-echo "CREATING CHANGE SET ${name}"
+echo "CREATING CHANGE SET ${change_set_name}"
 start_epoch="$(date +%s)"
 
 output="$(aws_with_retry --region $region cloudformation create-change-set --cli-input-json "file://cli-input.json")"
