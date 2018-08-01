@@ -20,7 +20,7 @@ template="$(echo "$input" | jq -r '.params.template // empty')"
 parameters="$(echo "$input" | jq -r '.params.parameters // empty')"
 parameters_aws="$(echo "$input" | jq -r '.params.parameters_aws // empty')"
 tags="$(echo "$input" | jq -r '.params.tags // empty')"
-capabilities="$(echo "$input" | jq -r '.params.capabilities // empty')"
+capabilities="$(echo "$input" | jq -r '.params.capabilities // []')"
 if [ -z "$name" ]; then
     echo "Must specify 'name' parameter"
     exit 1
@@ -42,49 +42,74 @@ if [ -n "$parameters" ]; then
         echo "Parameter file $parameters does not exist"
         exit 1
     fi
-    parameters_property="--parameter-overrides $(jq -c -r 'to_entries | sort_by(.key) | map("\"\(.key)=\(.value)\"") | join (" ")' < "$parameters")"
+    jq 'to_entries | map({ParameterKey: .key, ParameterValue: .value})' < "$parameters" > "params.json"
+    parameters_value="\"file://params.json\""
+
 elif [ -n "$parameters_aws" ]; then
     if [ ! -f "$parameters_aws" ]; then
         echo "Parameter file $parameters_aws does not exist"
         exit 1
     fi
-    parameters_property="--parameter-overrides $(jq -c -r 'map(select(has("ParameterValue"))) | map("\"\(.ParameterKey)=\(.ParameterValue)\"") | join (" ")' < "$parameters_aws")"
+    parameters_value="\"file://${parameters_aws}\""
+else
+    parameters_value="[]"
 fi
 
-tags_property=""
 if [ -n "$tags" ]; then
     if [ ! -f "$tags" ]; then
         echo "Tags file does not exist"
         exit 1
     fi
-    tags_property="--tags $(jq -c -r 'map("\(.Key)=\(.Value)") | join (" ")' < "$tags")"
+    tags_value="\"file://${tags}\""
+else
+    tags_value=[]
 fi
 
-capabilities_property=""
-if [ -n "$capabilities" ]; then
-    capabilities_property="--capabilities $(echo "$capabilities" | jq -c -r 'join (" ")')"
-fi
+uuid="$(cat /proc/sys/kernel/random/uuid)"
+name="$(date --iso-8601=ns)"
+
+
+
+tags_property=""
+
 
 echo "BEGINNING DEPLOYMENT PROCESS FOR STACK $name"
 echo ""
 echo "PRE-DEPLOY STATE:"
 echo ""
-awaitStart "$region" "$name"
+awaitCopmlete "$region" "$name"
 exit_code="$?"
-if [ "$exit_code" -ne 0 ]; then
-    exit "$exit_code"
+if [ "$exit_code" -eq 0 ] || [ "$exit_code" -eq 35 ] ; then
+    type="UPDATE"
+elif [ "$exit_code" -eq 25 ]; then
+    type="CREATE"
+else
+    exit $exit_code"
 fi
+
+
+cat << EOF > cli-input.json
+{
+    "StackName": "${name}",
+    "TemplateBody": "file://${template}",
+    "UsePreviousTemplate": false,
+    "Parameters": ${parameters_value},
+    "Capabilities": ${capabilities},
+    "Tags": ${tags_value},
+    "ChangeSetName": "${name}",
+    "ClientToken": "${uuid}",
+    "ChangeSetType": "${type}"
+}
+EOF
 
 echo ""
 echo ""
 echo "DEPLOY STATE:"
 echo ""
-
+echo "CREATING CHANGE SET ${name}"
 start_epoch="$(date +%s)"
 
-
-command="aws_with_retry --region $region cloudformation deploy --no-fail-on-empty-changeset --stack-name $name --template-file $template $parameters_property $tags_property $capabilities_property"
-output="$(eval "${command}")"
+output="$(aws_with_retry --region $region cloudformation create-change-set --cli-input-json "file://cli-input.json")"
 exit_code=$?
 
 echo "$output"
@@ -92,37 +117,41 @@ echo ""
 echo ""
 
 if [ "$exit_code" -eq 0 ]; then
-    if echo "$output" | grep -q 'No changes to deploy.'; then
-        no_changes=true
-    fi
-    echo "POST-DEPLOY STATE:"
-    echo ""
-    output="$(awaitComplete "$region" "$name")"
+    change_set_arn=$(echo "$output" | jq '.Id')
+    aws_with_retry --region $region cloudformation wait change-set-create-complete --change-set-name "${change_set_arn}"
     exit_code="$?"
-    echo "$output"
-    echo ""
-    echo ""
-    if [ "$no_changes" = true ] && [ "$exit_code" -eq 35 ]; then
-        exit_code=0
+    if [ "$exit_code" -eq 0 ]; then
+        aws_with_retry --region $region cloudformation execute-change-set --stack-name "${change_set_arn}"
+        exit_code="$?"
+    elif echo "$output" | grep -q 'No changes to deploy.'; then
+       exit_code=0
+       no_changes=true
     fi
-    if [ "$exit_code" -eq 0 ] ; then
-        new_version="$(echo "$output" | jq -c -r '{ "version": { "arn" : .StackId, "time" : ( .LastUpdatedTime // .CreationTime ) } }')";
-        echo "$new_version" >&3
-    fi
-    exit "$exit_code"
-else
+
+    if [ "$exit_code" -eq 0 ]; then
+        echo "POST-DEPLOY STATE:"
+        echo ""
+        output="$(awaitComplete "$region" "$name")"
+        exit_code="$?"
+        echo "$output"
+        echo ""
+        echo ""
+        if [ "$no_changes" = true ] && [ "$exit_code" -eq 35 ]; then
+            exit_code=0
+        fi
+        if [ "$exit_code" -eq 0 ] ; then
+            new_version="$(echo "$output" | jq -c -r '{ "version": { "arn" : .StackId, "time" : ( .LastUpdatedTime // .CreationTime ) } }')";
+            echo "$new_version" >&3
+        fi
+    fi;
+fi
+if [ "$exit_code" -ne 0 ]; then
     echo "DEPLOY FAILED:"
     showErrors "$region" "$name" "$start_epoch"
     echo ""
     echo ""
     echo "POST-FAILED-DEPLOY STATE:"
     echo ""
-    output=$(awaitComplete "$region" "$name")
-    await_exit_code="$?"
-    if [ "$await_exit_code" -eq 0 ]; then
-        new_version="$(echo "$output" | jq -c -r '{ "version": { "arn" : .StackId, "time" : ( .LastUpdatedTime // .CreationTime ) } }')";
-        echo "$new_version" >&3
-    fi
-    echo "$output"
-    exit "$exit_code"
+    awaitComplete "$region" "$name"
 fi
+exit "$exit_code"
