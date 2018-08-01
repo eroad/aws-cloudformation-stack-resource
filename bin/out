@@ -83,7 +83,7 @@ if [ "$exit_code" -eq 0 ] || [ "$exit_code" -eq 35 ] ; then
 elif [ "$exit_code" -eq 25 ]; then
     type="CREATE"
 else
-    exit $exit_code"
+    exit "$exit_code"
 fi
 
 uuid="$(cat /proc/sys/kernel/random/uuid)"
