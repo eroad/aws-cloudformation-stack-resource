@@ -146,6 +146,7 @@ else
 fi
 
 echo ""
+echo ""
 echo "FINAL STATE:"
 echo ""
 echo "$output"
