@@ -53,6 +53,8 @@ elif [ -n "$parameters_aws" ]; then
 else
     parameters_value="$(jq -nc '[]')"
 fi
+echo "parsed2"
+
 
 if [ -n "$tags" ]; then
     if [ ! -f "$tags" ]; then
@@ -63,6 +65,9 @@ if [ -n "$tags" ]; then
 else
     tags_value="$(jq -cn '[]')"
 fi
+
+echo "parsed3"
+
 
 echo "BEGINNING DEPLOYMENT PROCESS FOR STACK $name"
 echo ""
