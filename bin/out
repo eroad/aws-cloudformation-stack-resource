@@ -21,6 +21,8 @@ parameters="$(echo "$input" | jq -r '.params.parameters // empty')"
 parameters_aws="$(echo "$input" | jq -r '.params.parameters_aws // empty')"
 tags="$(echo "$input" | jq -r '.params.tags // empty')"
 capabilities="$(echo "$input" | jq '.params.capabilities // []')"
+resolve_failed_create="$(echo "$input" | jq '.params.resolve_failed_create // empty')"
+
 if [ -z "$name" ]; then
     echo "Must specify 'name' parameter"
     exit 1
@@ -73,7 +75,7 @@ pre_deploy_state="$(awaitComplete "$region" "$name")"
 exit_code="$?"
 echo "$pre_deploy_state"
 
-if [ "$exit_code" -eq 45 ]; then
+if [ "$exit_code" -eq 45 ] && [ -n "$resolve_failed_create" ] ; then
     echo ""
     echo "Deleting previous stack that failed to create"
     start_epoch="$(date +%s)"
