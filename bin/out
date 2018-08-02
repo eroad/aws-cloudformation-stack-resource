@@ -36,14 +36,14 @@ if [ ! -f "$template" ]; then
     exit 1
 fi
 
-parameters_property=""
+echo "parsed"
+
 if [ -n "$parameters" ]; then
     if [ ! -f "$parameters" ]; then
         echo "Parameter file $parameters does not exist"
         exit 1
     fi
     parameters_value="$(jq -c 'to_entries | map({ParameterKey: .key, ParameterValue: .value})' < "$parameters")"
-
 elif [ -n "$parameters_aws" ]; then
     if [ ! -f "$parameters_aws" ]; then
         echo "Parameter file $parameters_aws does not exist"
@@ -63,13 +63,6 @@ if [ -n "$tags" ]; then
 else
     tags_value="$(jq -cn '[]')"
 fi
-
-
-
-
-
-tags_property=""
-
 
 echo "BEGINNING DEPLOYMENT PROCESS FOR STACK $name"
 echo ""
