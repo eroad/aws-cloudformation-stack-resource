@@ -18,6 +18,29 @@
         },
         "VisibilityTimeout": 30
       }
+    },
+    "IamRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "Policies": [{
+          "PolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [{
+              "Effect": "Allow",
+              "Action": "sqs:*",
+              "Resource": {
+                "Fn::GetAtt": ["SqsQueue", "Arn"]
+              }
+            }]
+          },
+          "PolicyName": {
+            "Fn::Sub": "${AWS::StackName}-policy"
+          }
+        }],
+        "RoleName": {
+          "Fn::Sub": "${AWS::StackName}-role"
+        }
+      }
     }
   }
 }
