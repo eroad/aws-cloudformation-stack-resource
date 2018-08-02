@@ -34,11 +34,21 @@ is_stack_rolled_back() {
   return "$exit_code"
 }
 
-is_stack_errored() {
+is_stack_create_failed() {
   status="$(echo "$1" | jq -c -r '.StackStatus')"
   exit_code=1
   case "$status" in
-    CREATE_FAILED|ROLLBACK_FAILED|DELETE_FAILED|UPDATE_ROLLBACK_FAILED|ROLLBACK_COMPLETE) exit_code=0 ;;
+    CREATE_FAILED|ROLLBACK_FAILED|ROLLBACK_COMPLETE) exit_code=0 ;;
+  esac
+  return "$exit_code"
+}
+
+
+is_stack_stuck() {
+  status="$(echo "$1" | jq -c -r '.StackStatus')"
+  exit_code=1
+  case "$status" in
+    DELETE_FAILED|UPDATE_ROLLBACK_FAILED) exit_code=0 ;;
   esac
   return "$exit_code"
 }
@@ -129,9 +139,12 @@ awaitComplete(){
         elif is_stack_rolled_back "$output"; then
             echo "$output"
             return 35
-        elif is_stack_errored "$output" ; then
+        elif is_stack_create_failed "$output"; then
             echo "$output"
             return 45
+        elif is_stack_stuck "$output" ; then
+            echo "$output"
+            return 55
         elif is_stack_completed "$output"; then
             echo "$output"
             return 0

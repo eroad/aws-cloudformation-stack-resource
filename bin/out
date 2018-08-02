@@ -73,6 +73,18 @@ pre_deploy_state="$(awaitComplete "$region" "$name")"
 exit_code="$?"
 echo "$pre_deploy_state"
 
+if [ "$exit_code" -eq 45 ]; then
+    echo ""
+    echo "Deleting previous stack that failed to create"
+    aws_with_retry --region "$region" cloudformation delete-stack --stack-name "${name}"
+    if [ "$?" -eq 0 ]; then
+        exit_code=25
+    else
+        echo ""
+        echo "Could not delete stack"
+    fi
+fi
+
 if [ "$exit_code" -eq 0 ] || [ "$exit_code" -eq 35 ] ; then
     type="UPDATE"
     initial_version="$(echo "$pre_deploy_state" | jq -c -r '{ "version": { "arn" : .StackId, "time" : ( .LastUpdatedTime // .CreationTime ) } }')"
