@@ -65,9 +65,9 @@ else
 fi
 
 
-echo "BEGINNING DEPLOYMENT PROCESS FOR STACK $name"
+echo "Beginning deployment for stack: $name"
 echo ""
-echo "PRE-DEPLOY STATE:"
+echo "INITIAL STATE:"
 echo ""
 pre_deploy_state="$(awaitComplete "$region" "$name")"
 exit_code="$?"
