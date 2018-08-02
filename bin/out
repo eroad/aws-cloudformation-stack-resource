@@ -49,7 +49,7 @@ elif [ -n "$parameters_aws" ]; then
         echo "Parameter file $parameters_aws does not exist"
         exit 1
     fi
-    parameters_value="$(jq -c < "$parameters_aws")";
+    parameters_value="$(jq -c '.' < "$parameters_aws")";
 else
     parameters_value="$(jq -nc '[]')"
 fi
@@ -61,7 +61,7 @@ if [ -n "$tags" ]; then
         echo "Tags file does not exist"
         exit 1
     fi
-    tags_value="$(jq -c < "$tags")"
+    tags_value="$(jq -c '.' < "$tags")"
 else
     tags_value="$(jq -cn '[]')"
 fi
