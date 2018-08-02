@@ -53,16 +53,6 @@ is_stack_stuck() {
   return "$exit_code"
 }
 
-update_in_progress() {
-  status="$(echo "$1" | jq -c -r '.StackStatus')"
-  exit_code=1
-  case "$status" in
-    CREATE_IN_PROGRESS|DELETE_IN_PROGRESS|REVIEW_IN_PROGRESS|ROLLBACK_IN_PROGRESS|UPDATE_COMPLETE_CLEANUP_IN_PROGRESS|UPDATE_IN_PROGRESS|UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS|UPDATE_ROLLBACK_IN_PROGRESS) exit_code=0 ;;
-  esac
-  return "$exit_code"
-}
-
-
 load_stack() {
   stacks=$(aws_with_retry --region "$1" cloudformation describe-stacks --stack-name="$2")
   status="$?"
