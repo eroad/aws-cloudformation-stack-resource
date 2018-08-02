@@ -36,7 +36,6 @@ if [ ! -f "$template" ]; then
     exit 1
 fi
 
-echo "parsed"
 
 if [ -n "$parameters" ]; then
     if [ ! -f "$parameters" ]; then
@@ -53,7 +52,6 @@ elif [ -n "$parameters_aws" ]; then
 else
     parameters_value="$(jq -nc '[]')"
 fi
-echo "parsed2"
 
 
 if [ -n "$tags" ]; then
@@ -65,8 +63,6 @@ if [ -n "$tags" ]; then
 else
     tags_value="$(jq -cn '[]')"
 fi
-
-echo "parsed3"
 
 
 echo "BEGINNING DEPLOYMENT PROCESS FOR STACK $name"
@@ -85,7 +81,7 @@ fi
 
 cli_input=$(jq -cn \
    --arg client_token "$(cat /proc/sys/kernel/random/uuid)" \
-   --arg change_set_name "$(date -I'seconds')"  \
+   --arg change_set_name "$(date -u -I'seconds' | sed 's/:/-/g')"  \
    --arg stack_name "${name}" \
    --argjson parameters "${parameters_value}" \
    --argjson tags "${tags_value}" \
