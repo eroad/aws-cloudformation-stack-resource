@@ -2,7 +2,8 @@
   "AWSTemplateFormatVersion": "2010-09-09",
   "Parameters": {
     "TestQueueName": {
-      "Type": "String"
+      "Type": "String",
+      "Default" : "aws-cloudformation-stack-test-default"
     }
   },
   "Resources": {
