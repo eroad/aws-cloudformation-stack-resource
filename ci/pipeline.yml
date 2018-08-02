@@ -61,6 +61,7 @@ jobs:
           parameters_aws: repo/ci/test-stack/parameters.json
           tags: repo/ci/test-stack/tags.json
           capabilities: [CAPABILITY_NAMED_IAM]
+          resolve_failed_create: true
       - put: test-stack
         params:
           template: repo/ci/test-stack/template.json
