@@ -100,27 +100,6 @@ cli_input=$(jq -cn \
     "ChangeSetType": $type
 }')
 
-cli_input=$(jq -cn \
-   --arg client_token "$(cat /proc/sys/kernel/random/uuid)" \
-   --arg change_set_name "$(date -I'seconds')"  \
-   --arg stack_name "${name}" \
-   --argjson parameters "${parameters_value}" \
-   --argjson tags "${tags_value}" \
-   --argjson capabilities "${capabilities}" \
-   --arg type "${type}" \
-   --arg template "file://${template}" \
-'{
-    "StackName": $stack_name,
-    "TemplateBody": $template,
-    "UsePreviousTemplate": false,
-    "Parameters": $parameters,
-    "Capabilities": $capabilities,
-    "Tags": $tags,
-    "ChangeSetName": $change_set_name,
-    "ClientToken": "$client_token",
-    "ChangeSetType": $type
-}')
-
 echo ""
 echo ""
 echo "DEPLOY STATE:"
