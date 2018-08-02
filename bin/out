@@ -103,7 +103,7 @@ cli_input=$(jq -cn \
 
 echo ""
 echo ""
-echo "DEPLOY STATE:"
+echo "DEPLOYMENT STARTED:"
 echo ""
 start_epoch="$(date +%s)"
 
@@ -115,9 +115,11 @@ if [ "$exit_code" -ne 0 ]; then
 fi
 
 echo "Change Set \"${change_set_arn}\" created"
+echo ""
 echo "Waiting for change set creation to complete"
 awaitChangeSetCreated "$region" "$change_set_arn"
 exit_code="$?"
+echo ""
 if [[ "$exit_code" -eq 25 ]]; then
     echo "${initial_version}" >&3
     exit 0
@@ -131,21 +133,21 @@ if [[ "$exit_code" -ne 0 ]]; then
     exit "$exit_code"
 fi
 
-
 output="$(awaitComplete "$region" "$name")"
 exit_code="$?"
-echo ""
-echo ""
 if [[ "$exit_code" -eq 0 ]] ; then
-    echo "DEPLOY COMPLETED"
+    echo "Deploy Complete"
     new_version="$(echo "$output" | jq -c -r '{ "version": { "arn" : .StackId, "time" : ( .LastUpdatedTime // .CreationTime ) } }')";
     echo "$new_version" >&3
 else
-    echo "DEPLOY FAILED:"
+    echo "Deploy Failed:"
+    echo ""
     showErrors "$region" "$name" "$start_epoch"
 fi
 
+echo ""
 echo "FINAL STATE:"
+echo ""
 echo "$output"
 
 exit "$exit_code"
