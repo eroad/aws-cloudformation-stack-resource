@@ -63,6 +63,11 @@ load_stack() {
   echo "$stacks" | jq '.Stacks[0]'
 }
 
+load_change_set() {
+  aws_with_retry --region "$1" cloudformation describe-change-set --change-set-name="$2"
+}
+
+
 aws_with_retry(){
     timeout=1
     for i in $(seq "$retries"); do
@@ -77,6 +82,36 @@ aws_with_retry(){
     done
     echo "$reason"
     return "$status"
+}
+
+awaitChangeSetCreated(){
+    for i in $(seq 20); do
+        output="$(load_change_set "$1" "$2")"
+        status="$?"
+
+        if [ "$status" -ne 0 ]; then
+            echo "$output"
+            return "$status"
+        else
+           state="$(echo "$output" | jq -r '.Status')"
+           if [[ "$state" == "CREATE_COMPLETE" ]]; then
+             echo "Finished creating change set $2"
+             return 0
+           elif [[ "$state" == "FAILED" ]]; then
+             reason=$(echo "$output" | jq -r '.StatusReason')
+             if [[ "$reason" == "The submitted information didn't contain changes."* ]]; then
+                echo "No changes to deploy in change set $2"
+                return 25
+             else
+                echo "Failed to create change set due to $reason"
+                return 1
+             fi
+           fi
+        fi
+        sleep 20
+    done
+    echo "Timed out waiting for deploy completion!"
+    return 255
 }
 
 awaitComplete(){
