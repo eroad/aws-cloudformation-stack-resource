@@ -60,21 +60,24 @@ jobs:
           template: repo/ci/test-stack/template.json
           parameters_aws: repo/ci/test-stack/parameters.json
           tags: repo/ci/test-stack/tags.json
-          capability: [CAPABILITY_IAM]
+          capability: [CAPABILITY_NAMED_IAM]
       - put: test-stack
         params:
           template: repo/ci/test-stack/template.json
           parameters_aws: repo/ci/test-stack/parameters.json
           tags: repo/ci/test-stack/tags.json
+          capability: [CAPABILITY_NAMED_IAM]
       - put: test-stack
         params:
           template: repo/ci/test-stack/template.json
           parameters_aws: repo/ci/test-stack/parameters2.json
           tags: repo/ci/test-stack/tags.json
+          capability: [CAPABILITY_NAMED_IAM]
       - put: test-stack
         params:
           template: repo/ci/test-stack/template.json
           tags: repo/ci/test-stack/tags.json
+          capability: [CAPABILITY_NAMED_IAM]
   - name: test-check-in
     serial: true
     plan:
