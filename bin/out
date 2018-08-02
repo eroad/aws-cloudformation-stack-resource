@@ -20,7 +20,7 @@ template="$(echo "$input" | jq -r '.params.template // empty')"
 parameters="$(echo "$input" | jq -r '.params.parameters // empty')"
 parameters_aws="$(echo "$input" | jq -r '.params.parameters_aws // empty')"
 tags="$(echo "$input" | jq -r '.params.tags // empty')"
-capabilities="$(echo "$input" | jq -r '.params.capabilities // []')"
+capabilities="$(echo "$input" | jq '.params.capabilities // []')"
 if [ -z "$name" ]; then
     echo "Must specify 'name' parameter"
     exit 1
@@ -42,17 +42,16 @@ if [ -n "$parameters" ]; then
         echo "Parameter file $parameters does not exist"
         exit 1
     fi
-    jq 'to_entries | map({ParameterKey: .key, ParameterValue: .value})' < "$parameters" > "params.json"
-    parameters_value="\"file://params.json\""
+    parameters_value="$(jq -c 'to_entries | map({ParameterKey: .key, ParameterValue: .value})' < "$parameters")"
 
 elif [ -n "$parameters_aws" ]; then
     if [ ! -f "$parameters_aws" ]; then
         echo "Parameter file $parameters_aws does not exist"
         exit 1
     fi
-    parameters_value="\"file://${parameters_aws}\""
+    parameters_value="$(jq -c < "$parameters_aws")";
 else
-    parameters_value="[]"
+    parameters_value="$(jq -nc '[]')"
 fi
 
 if [ -n "$tags" ]; then
@@ -60,9 +59,9 @@ if [ -n "$tags" ]; then
         echo "Tags file does not exist"
         exit 1
     fi
-    tags_value="\"file://${tags}\""
+    tags_value="$(jq -c < "$tags")"
 else
-    tags_value=[]
+    tags_value="$(jq -cn '[]')"
 fi
 
 
@@ -86,22 +85,47 @@ else
     exit "$exit_code"
 fi
 
-uuid="$(cat /proc/sys/kernel/random/uuid)"
-change_set_name="$(date -I'seconds')"
-
-cat << EOF > cli-input.json
-{
-    "StackName": "${name}",
-    "TemplateBody": "file://${template}",
+cli_input=$(jq -cn \
+   --arg client_token "$(cat /proc/sys/kernel/random/uuid)" \
+   --arg change_set_name "$(date -I'seconds')"  \
+   --arg stack_name "${name}" \
+   --argjson parameters "${parameters_value}" \
+   --argjson tags "${tags_value}" \
+   --argjson capabilities "${capabilities}" \
+   --arg type "${type}" \
+   --arg template "file://${template}" \
+'{
+    "StackName": $stack_name,
+    "TemplateBody": $template,
     "UsePreviousTemplate": false,
-    "Parameters": ${parameters_value},
-    "Capabilities": ${capabilities},
-    "Tags": ${tags_value},
-    "ChangeSetName": "${change_set_name}",
-    "ClientToken": "${uuid}",
-    "ChangeSetType": "${type}"
-}
-EOF
+    "Parameters": $parameters,
+    "Capabilities": $capabilities,
+    "Tags": $tags,
+    "ChangeSetName": $change_set_name,
+    "ClientToken": "$client_token",
+    "ChangeSetType": $type
+}')
+
+cli_input=$(jq -cn \
+   --arg client_token "$(cat /proc/sys/kernel/random/uuid)" \
+   --arg change_set_name "$(date -I'seconds')"  \
+   --arg stack_name "${name}" \
+   --argjson parameters "${parameters_value}" \
+   --argjson tags "${tags_value}" \
+   --argjson capabilities "${capabilities}" \
+   --arg type "${type}" \
+   --arg template "file://${template}" \
+'{
+    "StackName": $stack_name,
+    "TemplateBody": $template,
+    "UsePreviousTemplate": false,
+    "Parameters": $parameters,
+    "Capabilities": $capabilities,
+    "Tags": $tags,
+    "ChangeSetName": $change_set_name,
+    "ClientToken": "$client_token",
+    "ChangeSetType": $type
+}')
 
 echo ""
 echo ""
@@ -110,7 +134,7 @@ echo ""
 echo "CREATING CHANGE SET ${change_set_name}"
 start_epoch="$(date +%s)"
 
-output="$(aws_with_retry --region $region cloudformation create-change-set --cli-input-json "file://cli-input.json")"
+output="$(aws_with_retry --region $region cloudformation create-change-set --cli-input-json "${cli_input}")"
 exit_code=$?
 
 echo "$output"
