@@ -81,7 +81,7 @@ fi
 
 cli_input=$(jq -cn \
    --arg client_token "$(cat /proc/sys/kernel/random/uuid)" \
-   --arg change_set_name "$(date -u -I'seconds' | sed 's/:/-/g')"  \
+   --arg change_set_name "concourse-update-$(date -u -I'seconds' | sed 's/:/-/g')"  \
    --arg stack_name "${name}" \
    --argjson parameters "${parameters_value}" \
    --argjson tags "${tags_value}" \
