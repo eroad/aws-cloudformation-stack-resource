@@ -96,7 +96,7 @@ cli_input=$(jq -cn \
     "Capabilities": $capabilities,
     "Tags": $tags,
     "ChangeSetName": $change_set_name,
-    "ClientToken": "$client_token",
+    "ClientToken": $client_token,
     "ChangeSetType": $type
 }')
 
