@@ -107,7 +107,7 @@ echo ""
 echo "CREATING CHANGE SET ${change_set_name}"
 start_epoch="$(date +%s)"
 
-output="$(aws_with_retry --region $region cloudformation create-change-set --cli-input-json "${cli_input}") --template-body file://${template}"
+output="$(aws_with_retry --region $region cloudformation create-change-set --cli-input-json "${cli_input}" --template-body "file://${template}")"
 exit_code=$?
 
 echo "$output"
