@@ -115,7 +115,7 @@ echo ""
 echo ""
 
 if [ "$exit_code" -eq 0 ]; then
-    change_set_arn=$(echo "$output" | jq '.Id')
+    change_set_arn=$(echo "$output" | jq -r '.Id')
     aws_with_retry --region $region cloudformation wait change-set-create-complete --change-set-name "${change_set_arn}"
     exit_code="$?"
     if [ "$exit_code" -eq 0 ]; then
