@@ -116,9 +116,12 @@ echo ""
 
 if [ "$exit_code" -eq 0 ]; then
     change_set_arn="$(echo "$output" | jq -r '.Id')"
+    echo "Waiting for change set ${change_set_arn} to be created"
     aws_with_retry --region "$region" cloudformation wait change-set-create-complete --change-set-name "${change_set_arn}"
+
     exit_code="$?"
     if [ "$exit_code" -eq 0 ]; then
+        echo "Executing change set ${change_set_arn}"
         aws_with_retry --region "$region" cloudformation execute-change-set --stack-name "${change_set_arn}"
         exit_code="$?"
     elif echo "$output" | grep -q 'No changes to deploy.'; then
