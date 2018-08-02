@@ -107,7 +107,7 @@ echo ""
 echo "CREATING CHANGE SET ${change_set_name}"
 start_epoch="$(date +%s)"
 
-output="$(aws_with_retry --region $region cloudformation create-change-set --cli-input-json "${cli_input}" --template-body "file://${template}")"
+output="$(aws_with_retry --region "$region" cloudformation create-change-set --cli-input-json "${cli_input}" --template-body "file://${template}")"
 exit_code=$?
 
 echo "$output"
@@ -115,11 +115,11 @@ echo ""
 echo ""
 
 if [ "$exit_code" -eq 0 ]; then
-    change_set_arn=$(echo "$output" | jq -r '.Id')
-    aws_with_retry --region $region cloudformation wait change-set-create-complete --change-set-name "${change_set_arn}"
+    change_set_arn="$(echo "$output" | jq -r '.Id')"
+    aws_with_retry --region "$region" cloudformation wait change-set-create-complete --change-set-name "${change_set_arn}"
     exit_code="$?"
     if [ "$exit_code" -eq 0 ]; then
-        aws_with_retry --region $region cloudformation execute-change-set --stack-name "${change_set_arn}"
+        aws_with_retry --region "$region" cloudformation execute-change-set --stack-name "${change_set_arn}"
         exit_code="$?"
     elif echo "$output" | grep -q 'No changes to deploy.'; then
        exit_code=0
