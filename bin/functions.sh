@@ -1,6 +1,7 @@
 #!/bin/bash
 
 retries=10
+max_retry_exponent=6
 time_between_status_checks=24
 time_between_status_checks_fuzz=6
 max_checks=90
@@ -72,7 +73,6 @@ load_change_set() {
 
 
 aws_with_retry(){
-    timeout=2
     for i in $(seq "$retries"); do
         reason="$(aws "$@" 2>&1)"
         status=$?
@@ -80,7 +80,8 @@ aws_with_retry(){
              echo "$reason"
              return "$status"
         fi
-        timeout=$(bc <<< "scale=4; val=($timeout * (1.5 + $RANDOM / 32767)); scale=0; val/1")
+        exponent=$(( i < max_retry_exponent ? i : max_retry_exponent ))
+        timeout=$(bc <<< "scale=5; val=((1.9 + ($RANDOM / 32767 / 5)) ^ $exponent); scale=0; val/1")
         sleep "$timeout"
     done
     echo "$reason"
