@@ -69,7 +69,7 @@ load_change_set() {
 
 
 aws_with_retry(){
-    timeout=1
+    timeout=2
     for i in $(seq "$retries"); do
         reason="$(aws "$@" 2>&1)"
         status=$?
@@ -77,7 +77,7 @@ aws_with_retry(){
              echo "$reason"
              return "$status"
         fi
-        timeout=$(bc <<< "scale=4; $timeout * (1.5 + $RANDOM / 32767)")
+        timeout=$(bc <<< "scale=4; val=($timeout * (1.5 + $RANDOM / 32767)); scale=0; val/1")
         sleep "$timeout"
     done
     echo "$reason"
@@ -85,7 +85,7 @@ aws_with_retry(){
 }
 
 awaitChangeSetCreated(){
-    for i in $(seq 20); do
+    for i in $(seq 90); do
         output="$(load_change_set "$1" "$2")"
         status="$?"
 
@@ -108,14 +108,15 @@ awaitChangeSetCreated(){
              fi
            fi
         fi
-        sleep 20
+        timeout=$(bc <<< "scale=4; val=(18 + 8 * ($RANDOM / 32767)); scale=0; val/1")
+        sleep "$timeout"
     done
     echo "Timed out waiting for deploy completion!"
     return 255
 }
 
 awaitComplete(){
-    for i in $(seq 20); do
+    for i in $(seq 90); do
         output="$(load_stack "$1" "$2")"
         status="$?"
         if [ "$status" -ne 0 ]; then
@@ -139,7 +140,8 @@ awaitComplete(){
             echo "$output"
             return 0
         fi
-        sleep 20
+        timeout=$(bc <<< "scale=4; val=(18 + 8 * ($RANDOM / 32767)); scale=0; val/1")
+        sleep "$timeout"
     done
     echo "Timed out waiting for deploy completion!"
     return 255
