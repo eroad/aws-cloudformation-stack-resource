@@ -1,6 +1,9 @@
 #!/bin/bash
 
 retries=10
+time_between_status_checks=24
+time_between_status_checks_fuzz=6
+max_checks=90
 
 is_stack_completed() {
   status="$(echo "$1" | jq  -c -r '.StackStatus')"
@@ -85,7 +88,7 @@ aws_with_retry(){
 }
 
 awaitChangeSetCreated(){
-    for i in $(seq 90); do
+    for i in $(seq "$max_checks"); do
         output="$(load_change_set "$1" "$2")"
         status="$?"
 
@@ -108,7 +111,7 @@ awaitChangeSetCreated(){
              fi
            fi
         fi
-        timeout=$(bc <<< "scale=4; val=(18 + 8 * ($RANDOM / 32767)); scale=0; val/1")
+        timeout=$(bc <<< "scale=4; val=(($time_between_status_checks - $time_between_status_checks_fuzz) + ($time_between_status_checks_fuzz * ($RANDOM / 32767))); scale=0; val/1")
         sleep "$timeout"
     done
     echo "Timed out waiting for deploy completion!"
@@ -116,7 +119,7 @@ awaitChangeSetCreated(){
 }
 
 awaitComplete(){
-    for i in $(seq 90); do
+    for i in $(seq "$max_checks"); do
         output="$(load_stack "$1" "$2")"
         status="$?"
         if [ "$status" -ne 0 ]; then
@@ -140,7 +143,7 @@ awaitComplete(){
             echo "$output"
             return 0
         fi
-        timeout=$(bc <<< "scale=4; val=(18 + 8 * ($RANDOM / 32767)); scale=0; val/1")
+        timeout=$(bc <<< "scale=4; val=(($time_between_status_checks - $time_between_status_checks_fuzz) + ($time_between_status_checks_fuzz * ($RANDOM / 32767))); scale=0; val/1")
         sleep "$timeout"
     done
     echo "Timed out waiting for deploy completion!"
