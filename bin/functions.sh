@@ -81,7 +81,7 @@ aws_with_retry(){
              return "$status"
         fi
         exponent=$(( i < max_retry_exponent ? i : max_retry_exponent ))
-        timeout=$(bc <<< "scale=5; val=((1.9 + ($RANDOM / 32767 / 5)) ^ $exponent); scale=0; val/1")
+        timeout=$(bc <<< "scale=4; val=((1.9 + ($RANDOM / 32767 / 5)) ^ $exponent); scale=0; val/1")
         sleep "$timeout"
     done
     echo "$reason"
