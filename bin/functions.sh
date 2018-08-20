@@ -4,7 +4,6 @@ retries=10
 max_retry_exponent=6
 time_between_status_checks=24
 time_between_status_checks_fuzz=6
-max_checks=90
 
 is_stack_completed() {
   status="$(echo "$1" | jq  -c -r '.StackStatus')"
@@ -89,7 +88,7 @@ aws_with_retry(){
 }
 
 awaitChangeSetCreated(){
-    for i in $(seq "$max_checks"); do
+    while true; do
         output="$(load_change_set "$1" "$2")"
         status="$?"
 
@@ -120,7 +119,7 @@ awaitChangeSetCreated(){
 }
 
 awaitComplete(){
-    for i in $(seq "$max_checks"); do
+    while true; do
         output="$(load_stack "$1" "$2")"
         status="$?"
         if [ "$status" -ne 0 ]; then
