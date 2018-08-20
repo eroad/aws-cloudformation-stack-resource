@@ -36,7 +36,7 @@ Create, update, or delete the stack. The `parameters` and `tags` data should by 
  * `parameters_aws` - path to a aws cloudformation formatted JSON file
  * `tags` - path to a JSON file
  * `capabilities` - array of additional [capabilities](http://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/API_CreateStack.html) (e.g. `CAPABILITY_IAM`)
- * `delete` - set to `true` to delete the stack (default `false`)
+ * `resolve_failed_create` - set to `true` automatically delete stacks that have failed to create
 
 
 ## Installation
@@ -51,7 +51,7 @@ To install on all Concourse workers, update your deployment manifest to add a ne
     properties:
       groundcrew:
         resource_types:
-          - image: "docker:///dpb587/aws-cloudformation-stack-resource#stable"
+          - image: "docker:///eroad/aws-cloudformation-stack-resource#stable"
             type: "aws-cloudformation-stack"
 
 
@@ -63,7 +63,7 @@ To use on a single pipeline, update your pipeline to add a new `resource_types`.
       - name: "aws-cloudformation-stack"
         type: "docker-image"
         source:
-          repository: "dpb587/aws-cloudformation-stack-resource"
+          repository: "eroad/aws-cloudformation-stack-resource"
           tag: "stable"
 
 
