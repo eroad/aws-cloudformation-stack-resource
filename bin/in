@@ -64,8 +64,9 @@ else
         exit 1
     fi
 
+    echo "$output" | jq -r '.StackName'  > name
 
-    echo "$output" | jq -r '.StackId'  > arn.txt
+    echo "$output" | jq -r '.StackId'  > arn
 
     echo "$output" | jq -r '[(.Outputs // [])[] | { "key": .OutputKey, "value": .OutputValue }] | from_entries // {}' > outputs.json
 
