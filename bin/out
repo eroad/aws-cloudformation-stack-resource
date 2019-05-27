@@ -21,6 +21,8 @@ parameters="$(echo "$input" | jq -r '.params.parameters // empty')"
 parameters_aws="$(echo "$input" | jq -r '.params.parameters_aws // empty')"
 tags="$(echo "$input" | jq -r '.params.tags // empty')"
 capabilities="$(echo "$input" | jq '.params.capabilities // []')"
+notification_arns="$(echo "$input" | jq '.params.notification_arns // []')"
+
 resolve_failed_create="$(echo "$input" | jq '.params.resolve_failed_create // empty')"
 
 if [ -z "$name" ]; then
@@ -117,12 +119,14 @@ cli_input=$(jq -cn \
    --argjson parameters "${parameters_value}" \
    --argjson tags "${tags_value}" \
    --argjson capabilities "${capabilities}" \
+   --argjson notification_arns "${notification_arns}" \
    --arg type "${type}" \
 '{
     "StackName": $stack_name,
     "UsePreviousTemplate": false,
     "Parameters": $parameters,
     "Capabilities": $capabilities,
+    "NotificationARNs": $notification_arns,
     "Tags": $tags,
     "ChangeSetName": $change_set_name,
     "ClientToken": $client_token,
