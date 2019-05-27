@@ -21,7 +21,7 @@ parameters="$(echo "$input" | jq -r '.params.parameters // empty')"
 parameters_aws="$(echo "$input" | jq -r '.params.parameters_aws // empty')"
 tags="$(echo "$input" | jq -r '.params.tags // empty')"
 capabilities="$(echo "$input" | jq '.params.capabilities // []')"
-notification_arns="$(echo "$input" | jq '.params.notification_arns // []')"
+notification_arns="$(echo "$input" | jq '.source.notification_arns // []')"
 
 resolve_failed_create="$(echo "$input" | jq '.params.resolve_failed_create // empty')"
 
