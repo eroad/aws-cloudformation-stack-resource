@@ -22,7 +22,6 @@ parameters_aws="$(echo "$input" | jq -r '.params.parameters_aws // empty')"
 tags="$(echo "$input" | jq -r '.params.tags // empty')"
 capabilities="$(echo "$input" | jq '.params.capabilities // []')"
 notification_arns="$(echo "$input" | jq '.source.notification_arns // []')"
-deployment_url_tag="$(echo "$input" | jq -r '.source.deployment_url_tag // "deployment_url"')"
 
 resolve_failed_create="$(echo "$input" | jq '.params.resolve_failed_create // empty')"
 
@@ -58,16 +57,17 @@ else
     parameters_value="$(jq -nc '[]')"
 fi
 
-JOB_URL="${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}"
 if [ -n "$tags" ]; then
     if [ ! -f "$tags" ]; then
         echo "Tags file does not exist"
         exit 1
     fi
-    tags_value="$(jq --arg job_url "${JOB_URL}" --arg deployment_url_tag "${deployment_url_tag}" -c '. += [{"Key": $deployment_url_tag, "Value": $job_url}]' < "$tags")"
+    tags_value="$(jq -c < "$tags")"
 else
-    tags_value="$(jq --arg job_url "${JOB_URL}" --arg deployment_url_tag "${deployment_url_tag}" -cn '[{"Key": $deployment_url_tag, "Value": $job_url}] ')"
+    tags_value="$(jq -cn '[]')"
 fi
+
+
 
 echo "Beginning deployment for stack: $name"
 echo ""
@@ -112,6 +112,9 @@ else
     exit "$exit_code"
 fi
 
+JOB_URL="${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}"
+
+
 cli_input=$(jq -cn \
    --arg client_token "$(cat /proc/sys/kernel/random/uuid)" \
    --arg change_set_name "concourse-update-$(date -u -I'seconds' | sed 's/:/-/g')"  \
@@ -121,6 +124,7 @@ cli_input=$(jq -cn \
    --argjson capabilities "${capabilities}" \
    --argjson notification_arns "${notification_arns}" \
    --arg type "${type}" \
+   --arg description "${JOB_URL}" \
 '{
     "StackName": $stack_name,
     "UsePreviousTemplate": false,
@@ -130,7 +134,8 @@ cli_input=$(jq -cn \
     "Tags": $tags,
     "ChangeSetName": $change_set_name,
     "ClientToken": $client_token,
-    "ChangeSetType": $type
+    "ChangeSetType": $type,
+    "Description": $description
 }')
 
 echo ""
