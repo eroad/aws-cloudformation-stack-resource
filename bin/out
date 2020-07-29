@@ -144,7 +144,7 @@ cli_input=$(jq -cn \
 if [ -n "$s3_bucket" ]; then
   echo ""
   echo "Uploading template to S3"
-  s3_key="${name}/$(date -u -I'seconds' | sed 's/:/-/g')}"
+  s3_key="${name}/$(date -u -I'seconds' | sed 's/:/-/g')"
   aws_with_retry --region "$region" s3api put-object --bucket "${s3_bucket}" --key "${s3_key}" --body "${template}"
 else
   file_size=$(stat --printf="%s" "$template")
