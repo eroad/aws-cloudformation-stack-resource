@@ -22,6 +22,7 @@ parameters_aws="$(echo "$input" | jq -r '.params.parameters_aws // empty')"
 tags="$(echo "$input" | jq -r '.params.tags // empty')"
 capabilities="$(echo "$input" | jq '.params.capabilities // []')"
 notification_arns="$(echo "$input" | jq '.source.notification_arns // []')"
+s3_bucket="$(echo "$input" | jq -r '.params.template_s3_bucket // empty')"
 
 resolve_failed_create="$(echo "$input" | jq '.params.resolve_failed_create // empty')"
 
@@ -115,6 +116,7 @@ fi
 JOB_URL="${ATC_EXTERNAL_URL}/teams/${BUILD_TEAM_NAME}/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}"
 
 
+
 cli_input=$(jq -cn \
    --arg client_token "$(cat /proc/sys/kernel/random/uuid)" \
    --arg change_set_name "concourse-update-$(date -u -I'seconds' | sed 's/:/-/g')"  \
@@ -138,13 +140,32 @@ cli_input=$(jq -cn \
     "Description": $description
 }')
 
+
+if [ -n "$s3_bucket" ]; then
+  s3_location="s3://${s3_bucket}/${name}/$(date -u -I'seconds' | sed 's/:/-/g')"
+  echo ""
+  echo "Uploading template to S3"
+  aws_with_retry --region "$region" s3 cp "$template" "$s3_location"
+else
+  file_size=$(stat --printf="%s" "$template")
+  if [ "$file_size" -gt 51200 ]; then
+    echo "Template size is greater than allowed for direct usage. Please specify an S3 Bucket to upload the template to."
+    exit 1;
+  fi
+fi
+
+
 echo ""
 echo ""
 echo "DEPLOYMENT STARTED:"
 echo ""
 start_epoch="$(date +%s)"
 
-change_set_arn="$(aws_with_retry --region "$region" cloudformation create-change-set --cli-input-json "${cli_input}" --template-body "file://${template}" --query 'Id' --output text)"
+if [ -n "$s3_location" ]; then
+  change_set_arn="$(aws_with_retry --region "$region" cloudformation create-change-set --cli-input-json "${cli_input}" --template-url "$s3_location" --query 'Id' --output text)"
+else
+  change_set_arn="$(aws_with_retry --region "$region" cloudformation create-change-set --cli-input-json "${cli_input}" --template-body "file://${template}" --query 'Id' --output text)"
+fi
 exit_code="$?"
 if [ "$exit_code" -ne 0 ]; then
     echo "${change_set_arn}"
