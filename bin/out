@@ -147,7 +147,7 @@ if [ -n "$s3_bucket" ]; then
   s3_key="${name}/$(date -u -I'seconds' | sed 's/:/-/g')"
   aws_with_retry --region "$region" s3api put-object --bucket "${s3_bucket}" --key "${s3_key}" --body "${template}"
 else
-  file_size=$(wc -c <"$template")
+  file_size="$(wc -c <"$template")"
   if [ "$file_size" -gt 51200 ]; then
     echo "Template size is greater than allowed for direct usage. Please specify an S3 Bucket to upload the template to."
     exit 1;
