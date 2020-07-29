@@ -162,7 +162,8 @@ echo ""
 start_epoch="$(date +%s)"
 
 if [ -n "$s3_key" ]; then
-  s3_url="https://${s3_bucket}.s3.${region}.amazonaws.com/${s3_key}"
+  s3_region=$(aws_with_retry --region "$region" s3api get-bucket-location --bucket "${s3_bucket}" --query LocationConstraint --output text)
+  s3_url="https://${s3_bucket}.s3.${s3_region}.amazonaws.com/${s3_key}"
   change_set_arn="$(aws_with_retry --region "$region" cloudformation create-change-set --cli-input-json "${cli_input}" --template-url "$s3_url" --query 'Id' --output text)"
 else
   change_set_arn="$(aws_with_retry --region "$region" cloudformation create-change-set --cli-input-json "${cli_input}" --template-body "file://${template}" --query 'Id' --output text)"
