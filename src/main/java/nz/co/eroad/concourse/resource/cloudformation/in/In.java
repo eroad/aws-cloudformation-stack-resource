@@ -1,4 +1,4 @@
-package nz.co.eroad.concourse.resource.cloudformation;
+package nz.co.eroad.concourse.resource.cloudformation.in;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
@@ -10,20 +10,21 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-import javax.inject.Inject;
-import javax.inject.Singleton;
-import nz.co.eroad.concourse.resource.cloudformation.impl.CloudformationOperations;
+import nz.co.eroad.concourse.resource.cloudformation.pojo.Metadata;
+import nz.co.eroad.concourse.resource.cloudformation.pojo.Version;
+import nz.co.eroad.concourse.resource.cloudformation.pojo.VersionMetadata;
+import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
+import software.amazon.awssdk.services.cloudformation.model.DescribeStacksResponse;
 import software.amazon.awssdk.services.cloudformation.model.Output;
 import software.amazon.awssdk.services.cloudformation.model.Stack;
 
-@Singleton
 public class In {
-  
+
+  private final CloudFormationClient cloudFormationClient;
   private final ObjectMapper objectMapper;
 
-  @Inject
-  In(ObjectMapper objectMapper) {
+  public In(CloudFormationClient cloudFormationClient, ObjectMapper objectMapper) {
+    this.cloudFormationClient = cloudFormationClient;
     this.objectMapper = objectMapper;
   }
 
@@ -53,13 +54,15 @@ public class In {
 
   }
 
-  public VersionMetadata run(String workingDirectory, Source source, Version existing) {
+  public VersionMetadata run(String workingDirectory, Version existing) {
 
-    CloudformationOperations cloudformationOperations = new CloudformationOperations(
-        source.getRegion(), source.getCredentials()
+    DescribeStacksResponse describeStacksResponse = cloudFormationClient.describeStacks(
+        builder -> builder.stackName(existing.getArn())
     );
-
-    Stack found = cloudformationOperations.getStack(existing.getArn()).orElseThrow(() -> new IllegalArgumentException("Stack with arn " + existing.getArn() + " does not exist!"));
+    if (describeStacksResponse.stacks() == null || !describeStacksResponse.hasStacks() || describeStacksResponse.stacks().isEmpty()) {
+      throw new IllegalStateException("Stack no longer exists!");
+    }
+    Stack found = describeStacksResponse.stacks().get(0);
     switch (found.stackStatus()) {
       case CREATE_COMPLETE:
       case UPDATE_COMPLETE:
@@ -76,6 +79,7 @@ public class In {
     }
 
   }
+
 }
 
 

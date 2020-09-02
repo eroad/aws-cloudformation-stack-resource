@@ -7,12 +7,22 @@ import java.io.IOException;
 import java.util.List;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
-import javax.inject.Inject;
+import nz.co.eroad.concourse.resource.cloudformation.aws.AwsClientFactory;
+import nz.co.eroad.concourse.resource.cloudformation.check.Check;
+import nz.co.eroad.concourse.resource.cloudformation.in.In;
+import nz.co.eroad.concourse.resource.cloudformation.out.Out;
+import nz.co.eroad.concourse.resource.cloudformation.pojo.OutInput;
+import nz.co.eroad.concourse.resource.cloudformation.pojo.Source;
+import nz.co.eroad.concourse.resource.cloudformation.pojo.Version;
+import nz.co.eroad.concourse.resource.cloudformation.pojo.VersionInput;
+import nz.co.eroad.concourse.resource.cloudformation.pojo.VersionMetadata;
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.ParameterException;
 import picocli.CommandLine.Parameters;
 import picocli.CommandLine.Spec;
+import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
+import software.amazon.awssdk.services.s3.S3Client;
 
 @picocli.CommandLine.Command(name = "concourse-resource")
 public class ConcourseResourceCommand implements Runnable {
@@ -23,20 +33,12 @@ public class ConcourseResourceCommand implements Runnable {
 
 
   private final ObjectMapper objectMapper;
-  private final In in;
-  private final Out out;
-  private final Check check;
 
-
-
-  
-  @Inject
-  public ConcourseResourceCommand(ObjectMapper objectMapper, In in, Out out, Check check) {
+  public ConcourseResourceCommand(ObjectMapper objectMapper) {
     this.objectMapper = objectMapper;
-    this.in = in;
-    this.out = out;
-    this.check = check;
   }
+
+
 
   @SuppressWarnings("unchecked")
   public void run() {
@@ -55,12 +57,16 @@ public class ConcourseResourceCommand implements Runnable {
     if (versionInput == null) {
       throw new IllegalArgumentException("Input JSON was invalid!");
     }
-    List<?> versions = check.run(versionInput.getSource(), versionInput.getVersion());
+    Source source = versionInput.getSource();
+    CloudFormationClient cloudFormationClient = AwsClientFactory
+        .cloudFormationClient(source.getRegion(), source.getCredentials());
+    Check check = new Check(cloudFormationClient);
+    List<Version> versions = check.run(versionInput.getSource().getName(), versionInput.getVersion());
     objectMapper.writeValue(new BufferedOutputStream(System.out), versions);
   }
 
   @CommandLine.Command(name = "in")
-  private void in(@Parameters(arity = "1") String workingDirectory) throws IOException {
+  private void in(@Parameters(arity = "1", description = "working directory") String workingDirectory) throws IOException {
     VersionInput versionInput = objectMapper.readValue(
         System.in,
         VersionInput.class
@@ -68,12 +74,16 @@ public class ConcourseResourceCommand implements Runnable {
     if (versionInput == null) {
       throw new IllegalArgumentException("Input JSON was invalid!");
     }
-    VersionMetadata versionMetadata = in.run(workingDirectory, versionInput.getSource(), versionInput.getVersion());
+    Source source = versionInput.getSource();
+    CloudFormationClient cloudFormationClient = AwsClientFactory
+        .cloudFormationClient(source.getRegion(), source.getCredentials());
+    In in = new In(cloudFormationClient, objectMapper);
+    VersionMetadata versionMetadata = in.run(workingDirectory, versionInput.getVersion());
     objectMapper.writeValue(new BufferedOutputStream(System.out), versionMetadata);
   }
 
   @CommandLine.Command(name = "out")
-  private void out(@Parameters(arity = "1") String workingDirectory) throws IOException {
+  private void out(@Parameters(arity = "1",  description = "working directory") String workingDirectory) throws IOException {
     OutInput outInput = objectMapper.readValue(
         System.in,
         OutInput.class
@@ -81,6 +91,12 @@ public class ConcourseResourceCommand implements Runnable {
     if (outInput == null) {
       throw new IllegalArgumentException("Input JSON was invalid!");
     }
+    StackOptionsFilesParser stackOptionsFilesParser = new StackOptionsFilesParser(objectMapper);
+    Source source = outInput.getSource();
+    CloudFormationClient cloudFormationClient = AwsClientFactory
+        .cloudFormationClient(source.getRegion(), source.getCredentials());
+    S3Client s3Client = AwsClientFactory.s3Client(source.getRegion(), source.getCredentials());
+    Out out = new Out(stackOptionsFilesParser, cloudFormationClient, s3Client);
     VersionMetadata versionMetadata = out.run(workingDirectory, outInput.getSource(), outInput.getParams());
     objectMapper.writeValue(new BufferedOutputStream(System.out), versionMetadata);
   }

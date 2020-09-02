@@ -1,4 +1,4 @@
-package nz.co.eroad.concourse.resource.cloudformation;
+package nz.co.eroad.concourse.resource.cloudformation.pojo;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;

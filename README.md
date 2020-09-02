@@ -29,10 +29,10 @@ Pulls down stack outputs, resource IDs, and metadata.
 
 ### `out`
 
-Create, update, or delete the stack. The `parameters` and `tags` data should by a simple key-value hash of names and values (e.g. `{"MyName":"MyValue"}`).
+Create, update, or delete the stack. The `parsedFiles` and `tags` data should by a simple key-value hash of names and values (e.g. `{"MyName":"MyValue"}`).
 
  * **`template`** - path to a CloudFormation template (do not configure when enabling `delete`)
- * `parameters` - path to a JSON file
+ * `parsedFiles` - path to a JSON file
  * `parameters_aws` - path to a aws cloudformation formatted JSON file
  * `tags` - path to a JSON file
  * `capabilities` - array of additional [capabilities](http://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/API_CreateStack.html) (e.g. `CAPABILITY_IAM`)
@@ -93,7 +93,7 @@ The following example uses a repository to store configuration and, whenever the
           - put: "acme-stack"
             params:
               template: "acme-infra/vpc/template.json"
-              parameters: "acme-infra/vpc/generate-parameters.sh"
+              parsedFiles: "acme-infra/vpc/generate-parsedFiles.sh"
       
       # execute a hook whenever the stack is created/updated
       # propagate task will see `stack/arn.txt`, `stack/outputs.json`, ...

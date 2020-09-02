@@ -1,29 +1,27 @@
-package nz.co.eroad.concourse.resource.cloudformation.impl;
+package nz.co.eroad.concourse.resource.cloudformation;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import software.amazon.awssdk.services.cloudformation.model.Capability;
 import software.amazon.awssdk.services.cloudformation.model.Parameter;
 import software.amazon.awssdk.services.cloudformation.model.Tag;
 
-public class Parameters {
+public class ParsedFiles {
 
-  private final static ObjectMapper objectMapper = new ObjectMapper();
   private final List<Parameter> parameters;
   private final List<Tag> tags;
-  private final String template;
   private final List<Capability> capabilities;
-  private final boolean resolveFailedCreate;
+  private final String templateBody;
 
-  Parameters(
+
+  public ParsedFiles(
       List<Parameter> parameters,
-      List<Tag> tags, String template,
-      List<Capability> capabilities, boolean resolveFailedCreate) {
+      List<Tag> tags,
+      List<Capability> capabilities,
+      String templateBody) {
     this.parameters = parameters;
     this.tags = tags;
-    this.template = template;
     this.capabilities = capabilities;
-    this.resolveFailedCreate = resolveFailedCreate;
+    this.templateBody = templateBody;
   }
 
   public List<Parameter> getParameters() {
@@ -34,17 +32,14 @@ public class Parameters {
     return tags;
   }
 
-  public String getTemplate() {
-    return template;
+  public String getTemplateBody() {
+    return templateBody;
   }
 
   public List<Capability> getCapabilities() {
     return capabilities;
   }
 
-  public boolean isResolveFailedCreate() {
-    return resolveFailedCreate;
-  }
 
 
 }

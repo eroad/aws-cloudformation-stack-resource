@@ -1,4 +1,4 @@
-package nz.co.eroad.concourse.resource.cloudformation.impl;
+package nz.co.eroad.concourse.resource.cloudformation;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -12,22 +12,20 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import javax.inject.Singleton;
-import nz.co.eroad.concourse.resource.cloudformation.Params;
+import nz.co.eroad.concourse.resource.cloudformation.pojo.Params;
 import software.amazon.awssdk.services.cloudformation.model.Capability;
 import software.amazon.awssdk.services.cloudformation.model.Parameter;
 import software.amazon.awssdk.services.cloudformation.model.Tag;
 
-@Singleton
-public class StackParametersParser {
+public class StackOptionsFilesParser {
 
   private final ObjectMapper objectMapper;
 
-  public StackParametersParser(ObjectMapper objectMapper) {
+  public StackOptionsFilesParser(ObjectMapper objectMapper) {
     this.objectMapper = objectMapper;
   }
 
-  public Parameters load(String workingDirectory, Params params) {
+  public ParsedFiles load(String workingDirectory, Params params) {
     if (workingDirectory == null || params == null) {
       throw new IllegalArgumentException("Base directory and params must be provided!");
     }
@@ -55,9 +53,7 @@ public class StackParametersParser {
     }
 
     List<Capability> capabilities = toAwsCapabilities(params.getCapabilities());
-
-    boolean resolveFailedCreate = params.getResolveFailedCreate();
-    return new Parameters(parameters, tags, templateBody, capabilities, resolveFailedCreate);
+    return new ParsedFiles( parameters, tags, capabilities, templateBody);
   }
 
   private List<Capability> toAwsCapabilities(List<String> toCapabilities) {
@@ -67,17 +63,16 @@ public class StackParametersParser {
   }
 
   private List<Tag> readTags(Path path) {
-    List<Tag.Builder> builders = null;
+    List<nz.co.eroad.concourse.resource.cloudformation.pojo.Tag> builders = null;
     try {
       builders = objectMapper.readValue(
-          path.toFile(), objectMapper.getTypeFactory()
-              .constructCollectionLikeType(List.class, Tag.serializableBuilderClass())
-      );
+          path.toFile(), new TypeReference<>() {
+          });
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
     return builders.stream()
-        .map(Tag.Builder::build)
+        .map(tag -> Tag.builder().key(tag.getKey()).value(tag.getValue()).build())
         .collect(Collectors.toList());
   }
 
@@ -101,11 +96,9 @@ public class StackParametersParser {
   private List<Parameter> readPreformattedParameters(Path path) {
 
     try {
-      List<Parameter.Builder> parameterBuilders = objectMapper.readValue(
-          path.toFile(), objectMapper.getTypeFactory()
-              .constructCollectionType(List.class, Parameter.serializableBuilderClass())
-      );
-      return parameterBuilders.stream().map(Parameter.Builder::build).collect(Collectors.toList());
+      List<nz.co.eroad.concourse.resource.cloudformation.pojo.Parameter> parameterBuilders = objectMapper.readValue(
+          path.toFile(), new TypeReference<>() {});
+      return parameterBuilders.stream().map(parameter -> Parameter.builder().parameterValue(parameter.getParameterValue()).parameterKey(parameter.getParameterKey()).resolvedValue(parameter.getResolvedValue()).usePreviousValue(parameter.getUsePreviousValue()).build()).collect(Collectors.toList());
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

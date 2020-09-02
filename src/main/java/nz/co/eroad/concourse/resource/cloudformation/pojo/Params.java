@@ -1,4 +1,4 @@
-package nz.co.eroad.concourse.resource.cloudformation;
+package nz.co.eroad.concourse.resource.cloudformation.pojo;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -14,6 +14,7 @@ public class Params {
   private final String templateFile;
   private final String tagsFile;
   private final boolean resolveFailedCreate;
+  private final String s3Bucket;
 
   @JsonCreator
   public Params(
@@ -22,13 +23,14 @@ public class Params {
       @JsonProperty(value = "template", required = true) String templateFile,
       @JsonProperty("tags") String tagsFile,
       @JsonProperty("capabilities") List<String> capabilities,
-      @JsonProperty(value = "resolveFailedCreate") Boolean resolveFailedCreate
-    ) {
+      @JsonProperty("resolveFailedCreate") Boolean resolveFailedCreate,
+      @JsonProperty("s3_bucket") String s3Bucket) {
 
     this.preformattedParametersFile = nullIfBlank(preformattedParametersFile);
     this.parametersFile = nullIfBlank(parametersFile);
 
     this.tagsFile = nullIfBlank(tagsFile);
+    this.s3Bucket = nullIfBlank(s3Bucket);
 
     if (templateFile == null || templateFile.isBlank()) {
       throw new IllegalArgumentException("'template' parameters must be specified");
@@ -67,5 +69,9 @@ public class Params {
       return null;
     }
     return value;
+  }
+
+  public String getS3Bucket() {
+    return s3Bucket;
   }
 }

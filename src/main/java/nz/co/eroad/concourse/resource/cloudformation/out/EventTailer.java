@@ -1,6 +1,7 @@
-package nz.co.eroad.concourse.resource.cloudformation.impl;
+package nz.co.eroad.concourse.resource.cloudformation.out;
 
-import static nz.co.eroad.concourse.resource.cloudformation.impl.CloudformationOperations.isTerminatingEvent;
+import static nz.co.eroad.concourse.resource.cloudformation.out.EventType.isStartingEvent;
+import static nz.co.eroad.concourse.resource.cloudformation.out.EventType.isTerminatingEvent;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -9,7 +10,6 @@ import java.util.Iterator;
 import java.util.Stack;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.cloudformation.model.DescribeStackEventsRequest;
-import software.amazon.awssdk.services.cloudformation.model.ResourceStatus;
 import software.amazon.awssdk.services.cloudformation.model.StackEvent;
 
 class EventTailer implements Iterator<StackEvent> {
@@ -18,6 +18,7 @@ class EventTailer implements Iterator<StackEvent> {
   private final CloudFormationClient cloudFormationClient;
   private final String stackId;
   private final String requestToken;
+  private final String stackName;
 
   private StackEvent lastEvent;
 
@@ -25,6 +26,7 @@ class EventTailer implements Iterator<StackEvent> {
   private final Stack<StackEvent> stackEvents = new Stack<>();
 
   EventTailer(CloudFormationClient cloudFormationClient, String stackId, String requestToken) {
+    this.stackName = nameFromId(stackId);
     this.cloudFormationClient = cloudFormationClient;
     this.stackId = stackId;
     this.requestToken = requestToken;
@@ -32,7 +34,7 @@ class EventTailer implements Iterator<StackEvent> {
 
   @Override
   public boolean hasNext() {
-    return lastEvent != null && !isTerminatingEvent(nameFromId(stackId), lastEvent);
+    return lastEvent == null || !isTerminatingEvent(nameFromId(stackId), lastEvent);
   }
 
   @Override
@@ -56,7 +58,13 @@ class EventTailer implements Iterator<StackEvent> {
   }
 
 
+  private String nameFromId(String stackId) {
+    String[] split = stackId.split("/");
+    return split[1];
+  }
+
   private void populateStack(StackEvent lastEvent) {
+
 
     DescribeStackEventsRequest describeStackEventsRequest = DescribeStackEventsRequest
         .builder()
@@ -67,7 +75,7 @@ class EventTailer implements Iterator<StackEvent> {
       if (next.equals(lastEvent)) {
         break;
       } else if (next.clientRequestToken().equals(requestToken)) {
-        if(isStartingEvent(stackId, next)) {
+        if(isStartingEvent(stackName, next)) {
           break;
         }
         stackEvents.add(next);
@@ -77,19 +85,6 @@ class EventTailer implements Iterator<StackEvent> {
 
   }
 
-  private String nameFromId(String stackId) {
-    String[] split = stackId.split("/");
-    return split[1];
-  }
 
-  private boolean isStartingEvent(String stackId, StackEvent stackEvent) {
-    String stackName = nameFromId(stackId);
-    return "AWS::CloudFormation::Stack".equals(stackEvent.resourceType())
-        && stackEvent.logicalResourceId().equals(stackName)
-        && stackEvent.stackName().equals(stackName)
-        && stackEvent.stackId().equals(stackEvent.physicalResourceId())
-        && stackEvent.resourceStatusReason().equals("User Initiated")
-        && (stackEvent.resourceStatus() == ResourceStatus.UPDATE_IN_PROGRESS || stackEvent.resourceStatus() == ResourceStatus.CREATE_IN_PROGRESS);
-  }
 
 }
