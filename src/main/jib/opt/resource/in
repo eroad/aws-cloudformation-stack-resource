@@ -1,0 +1,2 @@
+#!/bin/sh
+exec /app/cloudformation-resource-runner in "$@"

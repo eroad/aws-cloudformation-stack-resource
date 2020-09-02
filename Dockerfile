@@ -1,4 +1,4 @@
-FROM alpine:3
-RUN apk --no-cache add py-pip ca-certificates jq bc bash && \
-    pip install awscli --no-cache-dir
-ADD bin /opt/resource
+FROM busybox:glibc
+COPY /alias-scripts/* /opt/resource/
+COPY target/cloudformation-resource-*-runner /usr/local/bin/cloudformation-resource
+ENTRYPOINT [ "/usr/local/bin/cloudformation-resource" ]
