@@ -52,17 +52,23 @@ public class ConcourseResourceCommand implements Runnable {
         System.in,
         VersionInput.class
     );
+    if (versionInput == null) {
+      throw new IllegalArgumentException("Input JSON was invalid!");
+    }
     List<?> versions = check.run(versionInput.getSource(), versionInput.getVersion());
     objectMapper.writeValue(new BufferedOutputStream(System.out), versions);
   }
 
   @CommandLine.Command(name = "in")
   private void in(@Parameters(arity = "1") String workingDirectory) throws IOException {
-    VersionInput inInput = objectMapper.readValue(
+    VersionInput versionInput = objectMapper.readValue(
         System.in,
         VersionInput.class
     );
-    VersionMetadata versionMetadata = in.run(workingDirectory, inInput.getSource(), inInput.getVersion());
+    if (versionInput == null) {
+      throw new IllegalArgumentException("Input JSON was invalid!");
+    }
+    VersionMetadata versionMetadata = in.run(workingDirectory, versionInput.getSource(), versionInput.getVersion());
     objectMapper.writeValue(new BufferedOutputStream(System.out), versionMetadata);
   }
 
@@ -72,6 +78,9 @@ public class ConcourseResourceCommand implements Runnable {
         System.in,
         OutInput.class
     );
+    if (outInput == null) {
+      throw new IllegalArgumentException("Input JSON was invalid!");
+    }
     VersionMetadata versionMetadata = out.run(workingDirectory, outInput.getSource(), outInput.getParams());
     objectMapper.writeValue(new BufferedOutputStream(System.out), versionMetadata);
   }

@@ -34,7 +34,6 @@
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-core</artifactId>
     </dependency>
-
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-picocli</artifactId>
@@ -49,12 +48,12 @@
       <version>2.14.7</version>
       <exclusions>
         <exclusion>
-          <groupId>software.amazon.awssdk</groupId>
           <artifactId>apache-client</artifactId>
+          <groupId>software.amazon.awssdk</groupId>
         </exclusion>
         <exclusion>
-          <groupId>software.amazon.awssdk</groupId>
           <artifactId>netty-nio-client</artifactId>
+          <groupId>software.amazon.awssdk</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -63,14 +62,11 @@
       <artifactId>url-connection-client</artifactId>
       <version>2.14.7</version>
     </dependency>
-
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-junit5</artifactId>
       <scope>test</scope>
     </dependency>
-
-
   </dependencies>
   <build>
     <plugins>
@@ -102,42 +98,74 @@
           </systemPropertyVariables>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>com.google.cloud.tools</groupId>
+        <artifactId>jib-maven-plugin</artifactId>
+        <version>2.5.2</version>
+
+        <dependencies>
+          <dependency>
+            <groupId>com.google.cloud.tools</groupId>
+            <artifactId>jib-native-image-extension-maven</artifactId>
+            <version>0.1.0</version>
+          </dependency>
+        </dependencies>
+        <executions>
+          <execution>
+            <goals>
+              <goal>buildTar</goal>
+            </goals>
+            <id>build-image</id>
+            <phase>install</phase>
+          </execution>
+        </executions>
+        <configuration>
+          <container>
+            <entrypoint>/bin/ash</entrypoint>
+          </container>
+          <from>
+            <image>busybox:latest</image>
+          </from>
+          <extraDirectories>
+            <permissions>
+              <permission>
+                <file>/opt/resource/*</file>
+                <mode>755</mode>
+              </permission>
+            </permissions>
+          </extraDirectories>
+          <to>
+            <image>aws-cloudformation-stack-resource:${project.version}</image>
+          </to>
+          <pluginExtensions>
+            <pluginExtension>
+              <implementation>com.google.cloud.tools.jib.maven.extension.nativeimage.JibNativeImageExtension</implementation>
+              <properties>
+                <imageName>cloudformation-resource-runner</imageName>
+              </properties>
+            </pluginExtension>
+          </pluginExtensions>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <version>${surefire-plugin.version}</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+            <configuration>
+              <systemPropertyVariables>
+                <native.image.path>${project.build.directory}/${project.build.finalName}-runner</native.image.path>
+                <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
+                <maven.home>${maven.home}</maven.home>
+              </systemPropertyVariables>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
-  <profiles>
-    <profile>
-      <id>native</id>
-      <activation>
-        <property>
-          <name>native</name>
-        </property>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <artifactId>maven-failsafe-plugin</artifactId>
-            <version>${surefire-plugin.version}</version>
-            <executions>
-              <execution>
-                <goals>
-                  <goal>integration-test</goal>
-                  <goal>verify</goal>
-                </goals>
-                <configuration>
-                  <systemPropertyVariables>
-                    <native.image.path>${project.build.directory}/${project.build.finalName}-runner</native.image.path>
-                    <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
-                    <maven.home>${maven.home}</maven.home>
-                  </systemPropertyVariables>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-      <properties>
-        <quarkus.package.type>native</quarkus.package.type>
-      </properties>
-    </profile>
-  </profiles>
 </project>
