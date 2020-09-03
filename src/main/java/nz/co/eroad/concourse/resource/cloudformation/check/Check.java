@@ -28,6 +28,7 @@ public class Check {
         case CREATE_COMPLETE:
         case UPDATE_COMPLETE:
         case ROLLBACK_COMPLETE:
+        case IMPORT_COMPLETE:
           Version newVersion = Version.fromStack(stack);
           return Collections.singletonList(newVersion);
         case DELETE_COMPLETE:

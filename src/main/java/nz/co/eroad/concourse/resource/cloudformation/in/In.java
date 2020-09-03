@@ -67,9 +67,10 @@ public class In {
       case CREATE_COMPLETE:
       case UPDATE_COMPLETE:
       case ROLLBACK_COMPLETE:
+      case IMPORT_COMPLETE:
         Version version = Version.fromStack(found);
         if (!existing.equals(version)) {
-          throw new IllegalStateException("Cannot get stack info, stack has been updated concurrently");
+          throw new IllegalStateException("Cannot get stack info, stack has been updated concurrently." + existing.getArn() + "|" + existing.getTime() + " should be " + version.getArn() + "|" + version.getTime());
         }
         populateFiles(workingDirectory, found);
         Metadata status = new Metadata("status", found.stackStatusAsString());
