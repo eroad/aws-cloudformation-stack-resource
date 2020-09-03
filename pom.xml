@@ -124,7 +124,7 @@
           <mainClass>nz.co.eroad.concourse.resource.cloudformation.ConcourseResourceCommand</mainClass>
           <imageName>cloudformation-resource</imageName>
           <buildArgs>
-            --static
+            -H:+StaticExecutableWithDynamicLibC
             --no-fallback
             --enable-url-protocols=https
           </buildArgs>
@@ -157,7 +157,7 @@
             <entrypoint>/bin/ash</entrypoint>
           </container>
           <from>
-            <image>busybox:latest</image>
+            <image>busybox:glibc</image>
           </from>
           <extraDirectories>
             <permissions>
