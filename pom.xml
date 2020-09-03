@@ -128,6 +128,7 @@
             --libc=musl
             --no-fallback
             --enable-url-protocols=https
+            --initialize-at-build-time=
           </buildArgs>
         </configuration>
       </plugin>
