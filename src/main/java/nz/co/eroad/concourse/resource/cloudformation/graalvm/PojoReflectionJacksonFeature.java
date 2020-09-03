@@ -34,7 +34,6 @@ public class PojoReflectionJacksonFeature implements Feature {
     registerPojo(VersionInput.class);
     registerPojo(VersionMetadata.class);
 
-
   }
 
   private void registerPojo(Class<?> clazz) {
