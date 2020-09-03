@@ -33,7 +33,7 @@
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-nop</artifactId>
+      <artifactId>slf4j-simple</artifactId>
       <version>1.7.30</version>
     </dependency>
 
@@ -125,10 +125,8 @@
           <imageName>cloudformation-resource</imageName>
           <buildArgs>
             --static
-            --libc=musl
             --no-fallback
             --enable-url-protocols=https
-            --initialize-at-build-time=
           </buildArgs>
         </configuration>
       </plugin>
@@ -159,7 +157,7 @@
             <entrypoint>/bin/ash</entrypoint>
           </container>
           <from>
-            <image>alpine:latest</image>
+            <image>busybox:latest</image>
           </from>
           <extraDirectories>
             <permissions>
