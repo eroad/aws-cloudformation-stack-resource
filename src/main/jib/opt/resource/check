@@ -1,2 +1,2 @@
 #!/bin/sh
-/app/cloudformation-resource-runner check "$@"
+exec /app/cloudformation-resource-runner check "$@"
