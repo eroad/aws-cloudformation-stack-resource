@@ -23,7 +23,7 @@ public class Params {
       @JsonProperty(value = "template", required = true) String templateFile,
       @JsonProperty("tags") String tagsFile,
       @JsonProperty("capabilities") List<String> capabilities,
-      @JsonProperty("resolveFailedCreate") Boolean resolveFailedCreate,
+      @JsonProperty("resolve_failed_create") Boolean resolveFailedCreate,
       @JsonProperty("s3_bucket") String s3Bucket) {
 
     this.preformattedParametersFile = nullIfBlank(preformattedParametersFile);
