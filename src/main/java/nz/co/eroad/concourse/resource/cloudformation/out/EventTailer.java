@@ -1,7 +1,7 @@
 package nz.co.eroad.concourse.resource.cloudformation.out;
 
 import static nz.co.eroad.concourse.resource.cloudformation.out.EventType.isStartingEvent;
-import static nz.co.eroad.concourse.resource.cloudformation.out.EventType.isTerminatingEvent;
+import static nz.co.eroad.concourse.resource.cloudformation.out.EventType.isStableStack;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -34,7 +34,7 @@ class EventTailer implements Iterator<StackEvent> {
 
   @Override
   public boolean hasNext() {
-    return lastEvent == null || !isTerminatingEvent(nameFromId(stackId), lastEvent);
+    return lastEvent == null || !isStableStack(nameFromId(stackId), lastEvent);
   }
 
   @Override
