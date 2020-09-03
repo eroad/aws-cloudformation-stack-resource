@@ -16,10 +16,13 @@ public class VersionMetadata {
     this.metadata = metadata;
   }
 
+
+  @JsonProperty("version")
   public Version getVersion() {
     return version;
   }
 
+  @JsonProperty("metadata")
   public List<Metadata> getMetadata() {
     return metadata;
   }

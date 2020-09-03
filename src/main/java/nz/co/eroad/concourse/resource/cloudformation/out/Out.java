@@ -50,7 +50,6 @@ public class Out {
   public VersionMetadata run(String workingDirectory, Source source, Params params) {
     System.err.println("Reticulating splines.");
     ParsedFiles parsedFiles = parametersParser.load(workingDirectory, params);
-    System.err.println("Definitions loaded.");
 
     String templateUrl = null;
     if (params.getS3Bucket() != null) {
@@ -77,7 +76,24 @@ public class Out {
     if (lastUpdateEvent.isEmpty() || EventType.isCreatableFrom(source.getName(), lastUpdateEvent.get())) {
       stackId = createStack(requstToken, source, parsedFiles, templateUrl);
     } else if (EventType.isUpdatableEvent(source.getName(), lastUpdateEvent.get())) {
-      stackId = updateStack(requstToken, source, parsedFiles, templateUrl);
+      try {
+        stackId = updateStack(requstToken, source, parsedFiles, templateUrl);
+      } catch (CloudFormationException e) {
+        if (e.awsErrorDetails().errorCode().equals("ValidationError")
+            && e.awsErrorDetails().errorMessage()
+            .equals("No updates are to be performed.")) {
+          System.err.println("No updates are needed.");
+
+          Version version = new Version(lastUpdateEvent.get().physicalResourceId(), lastUpdateEvent.get().timestamp());
+          Metadata status = new Metadata("status", lastUpdateEvent.get().resourceStatusAsString());
+
+          return new VersionMetadata(
+              version,
+              Collections.singletonList(status)
+          );
+        }
+        throw e;
+      }
     } else {
       throw new IllegalStateException("Stack is not updatable because it is currently in a state of " + lastUpdateEvent.get().resourceStatusAsString());
     }
@@ -156,7 +172,7 @@ public class Out {
     System.err.println("Stack exists, updating it.");
 
     UpdateStackRequest.Builder updateStackRequest = UpdateStackRequest.builder()
-        .stackPolicyDuringUpdateBody(source.getName())
+        .stackName(source.getName())
         .capabilities(parsedFiles.getCapabilities())
         .parameters(parsedFiles.getParameters())
         .tags(parsedFiles.getTags())
