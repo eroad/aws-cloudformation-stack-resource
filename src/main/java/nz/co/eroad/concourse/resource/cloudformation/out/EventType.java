@@ -46,19 +46,24 @@ class EventType {
       StackStatus.UPDATE_IN_PROGRESS
       ));
 
-  static boolean isFailedCreateEvent(String stackName, StackEvent stackEvent) {
-    return isStackEvent(stackName, stackEvent)
-        && FAILED_CREATE_EVENTS.contains(StackStatus.fromValue(stackEvent.resourceStatusAsString()));
+
+  static boolean isFailedCreateStack(StackStatus stackStatus) {
+    return FAILED_CREATE_EVENTS.contains(stackStatus);
   }
 
-  static boolean isTerminatingEvent(String stackName, StackEvent stackEvent) {
+  static boolean isStableStack(String stackName, StackEvent stackEvent) {
     return isStackEvent(stackName, stackEvent)
         && TERMINATING_EVENTS.contains(StackStatus.fromValue(stackEvent.resourceStatusAsString()));
   }
 
-  static boolean isUpdatableEvent(String stackName, StackEvent stackEvent) {
-    return isStackEvent(stackName, stackEvent)
-        && UPDATABLE_EVENTS.contains(StackStatus.fromValue(stackEvent.resourceStatusAsString()));
+  static boolean isStableStack(StackStatus stackStatus) {
+    return TERMINATING_EVENTS.contains(stackStatus);
+  }
+
+
+
+  static boolean isExistingStack(StackStatus stackStatus) {
+    return UPDATABLE_EVENTS.contains(stackStatus);
   }
 
 
@@ -73,9 +78,8 @@ class EventType {
         && STARTING_EVENTS.contains(StackStatus.fromValue(stackEvent.resourceStatusAsString()));
   }
 
-  static boolean isCreatableFrom(String stackName, StackEvent stackEvent) {
-    return isStackEvent(stackName, stackEvent)
-        && StackStatus.fromValue(stackEvent.resourceStatusAsString()) == StackStatus.DELETE_COMPLETE;
+  static boolean isDeletedStack(StackStatus stackStatus) {
+    return stackStatus == StackStatus.DELETE_COMPLETE;
   }
 
   private static boolean isStackEvent(String stackName, StackEvent stackEvent) {
