@@ -75,10 +75,10 @@ class EventTailer implements Iterator<StackEvent> {
       if (next.equals(lastEvent)) {
         break;
       } else if (next.clientRequestToken().equals(requestToken)) {
+        stackEvents.add(next);
         if(isStartingEvent(stackName, next)) {
           break;
         }
-        stackEvents.add(next);
       }
     }
 
