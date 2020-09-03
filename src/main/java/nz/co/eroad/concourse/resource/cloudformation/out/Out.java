@@ -47,7 +47,7 @@ public class Out {
   }
   
   public VersionMetadata run(String workingDirectory, Source source, Params params) {
-    System.err.println("Reticulating splines.");
+    System.err.println("Reticulating splines.\n");
     ParsedFiles parsedFiles = parametersParser.load(workingDirectory, params);
 
     String templateUrl = null;
@@ -163,7 +163,7 @@ public class Out {
       createStackRequest.templateURL(templateUrl);
     }
     String stackId = cloudFormationClient.createStack(createStackRequest.build()).stackId();
-    System.err.println("Stack creation begun.");
+    System.err.println("Stack creation begun:\n");
     return stackId;
   }
 
@@ -183,7 +183,7 @@ public class Out {
       updateStackRequest.templateURL(templateUrl);
     }
     String stackId = cloudFormationClient.updateStack(updateStackRequest.build()).stackId();
-    System.err.println("Stack update begun. ");
+    System.err.println("Stack update begun:\n");
     return stackId;
   }
 
