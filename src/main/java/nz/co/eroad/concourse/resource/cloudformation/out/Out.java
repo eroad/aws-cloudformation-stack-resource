@@ -48,7 +48,9 @@ public class Out {
   }
   
   public VersionMetadata run(String workingDirectory, Source source, Params params) {
+    System.err.println("Reticulating splines.");
     ParsedFiles parsedFiles = parametersParser.load(workingDirectory, params);
+    System.err.println("Definitions loaded.");
 
     String templateUrl = null;
     if (params.getS3Bucket() != null) {

@@ -91,13 +91,11 @@ public class ConcourseResourceCommand implements Runnable {
     if (outInput == null) {
       throw new IllegalArgumentException("Input JSON was invalid!");
     }
-    System.err.println("START");
-    StackOptionsFilesParser stackOptionsFilesParser = new StackOptionsFilesParser(objectMapper);
-    System.err.println("PARSED");
     Source source = outInput.getSource();
     CloudFormationClient cloudFormationClient = AwsClientFactory
         .cloudFormationClient(source.getRegion(), source.getCredentials());
     S3Client s3Client = AwsClientFactory.s3Client(source.getRegion(), source.getCredentials());
+    StackOptionsFilesParser stackOptionsFilesParser = new StackOptionsFilesParser(objectMapper);
     Out out = new Out(stackOptionsFilesParser, cloudFormationClient, s3Client);
     VersionMetadata versionMetadata = out.run(workingDirectory, outInput.getSource(), outInput.getParams());
     objectMapper.writeValue(new BufferedOutputStream(System.out), versionMetadata);
