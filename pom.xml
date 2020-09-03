@@ -126,6 +126,7 @@
           <buildArgs>
             --static
             --no-fallback
+            --libc=musl
             --enable-url-protocols=http,https
           </buildArgs>
         </configuration>
@@ -157,7 +158,7 @@
             <entrypoint>/bin/ash</entrypoint>
           </container>
           <from>
-            <image>busybox:latest</image>
+            <image>alpine:latest</image>
           </from>
           <extraDirectories>
             <permissions>
