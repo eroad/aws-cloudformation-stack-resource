@@ -126,7 +126,7 @@
           <buildArgs>
             --static
             --no-fallback
-            --enable-url-protocols=https
+            --enable-url-protocols=http,https
           </buildArgs>
         </configuration>
       </plugin>
