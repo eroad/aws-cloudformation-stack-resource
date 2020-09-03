@@ -158,7 +158,7 @@
             <entrypoint>/bin/ash</entrypoint>
           </container>
           <from>
-            <image>busybox:latest</image>
+            <image>alpine:latest</image>
           </from>
           <extraDirectories>
             <permissions>
