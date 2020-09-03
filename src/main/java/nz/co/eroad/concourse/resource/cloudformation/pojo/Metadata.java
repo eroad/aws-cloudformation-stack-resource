@@ -13,10 +13,13 @@ public class Metadata {
     this.value = value;
   }
 
+
+  @JsonProperty("name")
   public String getName() {
     return name;
   }
 
+  @JsonProperty("value")
   public String getValue() {
     return value;
   }

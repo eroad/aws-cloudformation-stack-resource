@@ -1,12 +1,11 @@
 package nz.co.eroad.concourse.resource.cloudformation;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.quarkus.picocli.runtime.PicocliCommandLineFactory;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.util.List;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Produces;
+import java.util.logging.LogManager;
 import nz.co.eroad.concourse.resource.cloudformation.aws.AwsClientFactory;
 import nz.co.eroad.concourse.resource.cloudformation.check.Check;
 import nz.co.eroad.concourse.resource.cloudformation.in.In;
@@ -32,10 +31,11 @@ public class ConcourseResourceCommand implements Runnable {
   private CommandSpec spec;
 
 
-  private final ObjectMapper objectMapper;
+  private final ObjectMapper objectMapper = new ObjectMapper()
+      .registerModule(new JavaTimeModule());
 
-  public ConcourseResourceCommand(ObjectMapper objectMapper) {
-    this.objectMapper = objectMapper;
+  public ConcourseResourceCommand() {
+
   }
 
 
@@ -102,17 +102,15 @@ public class ConcourseResourceCommand implements Runnable {
   }
  
 
-}
+    public static void main(String... args) { // bootstrap the application
+      LogManager.getLogManager().reset();
+      System.exit(new CommandLine(new ConcourseResourceCommand())
+          .setExecutionExceptionHandler(
+              (e, commandLine, parseResult) -> {
+                //ex.printStackTrace(); // no stack trace
+                commandLine.getErr().println(e.getMessage());
+                return commandLine.getCommandSpec().exitCodeOnExecutionException();
+              }).execute(args));
+    }
 
-@ApplicationScoped
-class CustomConfiguration {
-
-  @Produces
-  CommandLine customCommandLine(PicocliCommandLineFactory factory) {
-    return factory.create().setExecutionExceptionHandler((e, commandLine, parseResult) -> {
-      e.printStackTrace(); // no stack trace
-      commandLine.getErr().println(e.getMessage());
-      return commandLine.getCommandSpec().exitCodeOnExecutionException();
-    });
-  }
 }

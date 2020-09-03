@@ -29,10 +29,12 @@ public class Version {
   }
 
 
+  @JsonProperty("arn")
   public String getArn() {
     return arn;
   }
 
+  @JsonProperty("time")
   @JsonFormat(shape = Shape.STRING)
   public Instant getTime() {
     return time;
