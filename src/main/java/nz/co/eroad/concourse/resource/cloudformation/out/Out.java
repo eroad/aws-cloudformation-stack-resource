@@ -69,6 +69,9 @@ public class Out {
       }
       lastUpdateEvent = awaitStackStable(source.getName());
     }
+    lastUpdateEvent.ifPresent(event -> System.err.println("Current stack state is " + event.resourceStatusAsString()));
+
+
     String requstToken = UUID.randomUUID().toString();
     String stackId;
     if (lastUpdateEvent.isEmpty() || EventType.isCreatableFrom(source.getName(), lastUpdateEvent.get())) {
@@ -76,7 +79,7 @@ public class Out {
     } else if (EventType.isUpdatableEvent(source.getName(), lastUpdateEvent.get())) {
       stackId = updateStack(requstToken, source, parsedFiles, templateUrl);
     } else {
-      throw new IllegalStateException("Stack is not updatable, it is " + lastUpdateEvent.get().resourceStatusAsString());
+      throw new IllegalStateException("Stack is not updatable because it is currently in a state of " + lastUpdateEvent.get().resourceStatusAsString());
     }
 
     Iterator<StackEvent> stackEvents = new EventTailer(cloudFormationClient, stackId, requstToken);
@@ -115,7 +118,6 @@ public class Out {
     Optional<StackEvent> lastEvent = getLastEvent(stackName);
     if (lastEvent.isPresent() && !isTerminatingEvent(stackName, lastEvent.get())) {
       System.err.println("An update is in progress. Please stand by.");
-
       do {
         try {
           Thread.sleep(10000);
