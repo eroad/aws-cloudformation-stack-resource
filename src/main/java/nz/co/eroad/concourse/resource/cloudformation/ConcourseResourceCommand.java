@@ -5,7 +5,6 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.util.List;
-import java.util.logging.LogManager;
 import nz.co.eroad.concourse.resource.cloudformation.aws.AwsClientFactory;
 import nz.co.eroad.concourse.resource.cloudformation.check.Check;
 import nz.co.eroad.concourse.resource.cloudformation.in.In;
@@ -103,7 +102,8 @@ public class ConcourseResourceCommand implements Runnable {
  
 
     public static void main(String... args) { // bootstrap the application
-      LogManager.getLogManager().reset();
+      System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "trace");
+
       System.exit(new CommandLine(new ConcourseResourceCommand())
           .setExecutionExceptionHandler(
               (e, commandLine, parseResult) -> {
