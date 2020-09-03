@@ -110,7 +110,7 @@ class CustomConfiguration {
   @Produces
   CommandLine customCommandLine(PicocliCommandLineFactory factory) {
     return factory.create().setExecutionExceptionHandler((e, commandLine, parseResult) -> {
-      //ex.printStackTrace(); // no stack trace
+      e.printStackTrace(); // no stack trace
       commandLine.getErr().println(e.getMessage());
       return commandLine.getCommandSpec().exitCodeOnExecutionException();
     });
