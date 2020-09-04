@@ -3,6 +3,8 @@ package nz.co.eroad.concourse.resource.cloudformation.check;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import nz.co.eroad.concourse.resource.cloudformation.aws.AwsClientFactory;
+import nz.co.eroad.concourse.resource.cloudformation.pojo.Source;
 import nz.co.eroad.concourse.resource.cloudformation.pojo.Version;
 import software.amazon.awssdk.awscore.exception.AwsErrorDetails;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
@@ -12,10 +14,11 @@ import software.amazon.awssdk.services.cloudformation.model.Stack;
 
 public class Check {
 
-  private CloudFormationClient cloudFormationClient;
+  private final CloudFormationClient cloudFormationClient;
 
-  public Check(CloudFormationClient cloudFormationClient) {
-    this.cloudFormationClient = cloudFormationClient;
+  public Check(Source source) {
+    this.cloudFormationClient = AwsClientFactory
+        .cloudFormationClient(source.getRegion(), source.getCredentials());
   }
 
   public List<Version> run(String name, Version existing) {

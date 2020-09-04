@@ -7,12 +7,14 @@ import java.util.Optional;
 import java.util.UUID;
 import nz.co.eroad.concourse.resource.cloudformation.ParsedFiles;
 import nz.co.eroad.concourse.resource.cloudformation.StackOptionsFilesParser;
+import nz.co.eroad.concourse.resource.cloudformation.aws.AwsClientFactory;
 import nz.co.eroad.concourse.resource.cloudformation.pojo.Metadata;
 import nz.co.eroad.concourse.resource.cloudformation.pojo.Params;
 import nz.co.eroad.concourse.resource.cloudformation.pojo.Source;
 import nz.co.eroad.concourse.resource.cloudformation.pojo.Version;
 import nz.co.eroad.concourse.resource.cloudformation.pojo.VersionMetadata;
 import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.cloudformation.model.CloudFormationException;
 import software.amazon.awssdk.services.cloudformation.model.CreateStackRequest;
@@ -24,33 +26,47 @@ import software.amazon.awssdk.services.cloudformation.model.Stack;
 import software.amazon.awssdk.services.cloudformation.model.StackEvent;
 import software.amazon.awssdk.services.cloudformation.model.UpdateStackRequest;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.GetBucketLocationRequest;
+import software.amazon.awssdk.services.s3.model.GetBucketLocationResponse;
 import software.amazon.awssdk.services.s3.model.GetUrlRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 public class Out {
 
   private final StackOptionsFilesParser parametersParser;
+  private final Source source;
   private final CloudFormationClient cloudFormationClient;
   private final S3Client s3Client;
 
-  public Out(StackOptionsFilesParser parametersParser, CloudFormationClient cloudFormationClient, S3Client s3Client) {
+  public Out(StackOptionsFilesParser parametersParser, Source source) {
     this.parametersParser = parametersParser;
-    this.cloudFormationClient = cloudFormationClient;
-    this.s3Client = s3Client;
+    this.source = source;
+    this.cloudFormationClient = AwsClientFactory
+        .cloudFormationClient(source.getRegion(), source.getCredentials());
+    this.s3Client = AwsClientFactory.s3Client(
+        source.getRegion(), source.getCredentials()
+    );
+
   }
 
   private String uploadTemplate(String bucket, String stackName, String template) {
+    GetBucketLocationResponse bucketLocationResponse = s3Client
+        .getBucketLocation(GetBucketLocationRequest.builder().bucket(bucket).build());
+    Region region = bucketLocationResponse.locationConstraintAsString() == null ? Region.US_EAST_1 : Region.of(bucketLocationResponse.locationConstraintAsString());
+    S3Client regionalClient = AwsClientFactory.s3Client(region, source.getCredentials());
+
     String s3Key = stackName + "/" + Instant.now().toString().replace(":", "-");
-    System.err.println("Uploading template to S3 in " + bucket + "/" + s3Key);
+    System.err.println("Uploading template to S3 in " + region + " to " + bucket + "/" + s3Key);
     PutObjectRequest putObjectRequest = PutObjectRequest.builder().bucket(bucket).key(s3Key).build();
-    s3Client.putObject(putObjectRequest, RequestBody.fromString(template));
+    regionalClient.putObject(putObjectRequest, RequestBody.fromString(template));
+
     String url = s3Client.utilities()
         .getUrl(GetUrlRequest.builder().bucket(bucket).key(s3Key).build()).toExternalForm();
     System.err.println("Template URL is " + url);
     return url;
   }
   
-  public VersionMetadata run(String workingDirectory, Source source, Params params) {
+  public VersionMetadata run(String workingDirectory, Params params) {
     System.err.println("Reticulating splines.\n");
     ParsedFiles parsedFiles = parametersParser.load(workingDirectory, params);
 

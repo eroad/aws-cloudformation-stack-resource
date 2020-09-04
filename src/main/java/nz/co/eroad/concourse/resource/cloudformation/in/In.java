@@ -10,7 +10,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import nz.co.eroad.concourse.resource.cloudformation.aws.AwsClientFactory;
 import nz.co.eroad.concourse.resource.cloudformation.pojo.Metadata;
+import nz.co.eroad.concourse.resource.cloudformation.pojo.Source;
 import nz.co.eroad.concourse.resource.cloudformation.pojo.Version;
 import nz.co.eroad.concourse.resource.cloudformation.pojo.VersionMetadata;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
@@ -23,8 +25,9 @@ public class In {
   private final CloudFormationClient cloudFormationClient;
   private final ObjectMapper objectMapper;
 
-  public In(CloudFormationClient cloudFormationClient, ObjectMapper objectMapper) {
-    this.cloudFormationClient = cloudFormationClient;
+  public In(Source source, ObjectMapper objectMapper) {
+    this.cloudFormationClient = AwsClientFactory
+        .cloudFormationClient(source.getRegion(), source.getCredentials());;
     this.objectMapper = objectMapper;
   }
 
