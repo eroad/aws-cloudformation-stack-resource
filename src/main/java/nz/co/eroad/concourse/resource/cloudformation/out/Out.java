@@ -71,7 +71,7 @@ public class Out {
       }
       currentStack = awaitStackStable(source.getName());
     }
-    currentStack.ifPresent(event -> System.err.println("Current stack state is " + event.stackStatusAsString() + "."));
+    currentStack.ifPresent(event -> System.err.println("Current stack state is " + event.stackStatusAsString()));
 
 
     String requstToken = UUID.randomUUID().toString();
