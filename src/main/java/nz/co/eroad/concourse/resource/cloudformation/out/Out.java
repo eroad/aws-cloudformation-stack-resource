@@ -41,9 +41,13 @@ public class Out {
 
   private String uploadTemplate(String bucket, String stackName, String template) {
     String s3Key = stackName + "/" + Instant.now().toString().replace(":", "-");
+    System.err.println("Uploading template to S3 in " + bucket + "/" + s3Key);
     PutObjectRequest putObjectRequest = PutObjectRequest.builder().bucket(bucket).key(s3Key).build();
     s3Client.putObject(putObjectRequest, RequestBody.fromString(template));
-    return s3Client.utilities().getUrl(GetUrlRequest.builder().bucket(bucket).key(s3Key).build()).toExternalForm();
+    String url = s3Client.utilities()
+        .getUrl(GetUrlRequest.builder().bucket(bucket).key(s3Key).build()).toExternalForm();
+    System.err.println("Template URL is " + url);
+    return url;
   }
   
   public VersionMetadata run(String workingDirectory, Source source, Params params) {
@@ -51,8 +55,8 @@ public class Out {
     ParsedFiles parsedFiles = parametersParser.load(workingDirectory, params);
 
     String templateUrl = null;
-    if (params.getS3Bucket() != null) {
-      templateUrl = uploadTemplate(params.getS3Bucket(), source.getName(), parsedFiles.getTemplateBody());
+    if (params.getTemplateS3Bucket() != null) {
+      templateUrl = uploadTemplate(params.getTemplateS3Bucket(), source.getName(), parsedFiles.getTemplateBody());
     } else if (parsedFiles.getTemplateBody().length() > 51200) {
       throw new IllegalArgumentException("Template body is too large to directly use, please specify an s3_bucket to upload it too as part of deploy.");
     }

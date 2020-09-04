@@ -14,7 +14,7 @@ public class Params {
   private final String templateFile;
   private final String tagsFile;
   private final boolean resolveFailedCreate;
-  private final String s3Bucket;
+  private final String templateS3Bucket;
 
   @JsonCreator
   public Params(
@@ -24,13 +24,13 @@ public class Params {
       @JsonProperty("tags") String tagsFile,
       @JsonProperty("capabilities") List<String> capabilities,
       @JsonProperty("resolve_failed_create") Boolean resolveFailedCreate,
-      @JsonProperty("s3_bucket") String s3Bucket) {
+      @JsonProperty("template_s3_bucket") String templateS3Bucket) {
 
     this.preformattedParametersFile = nullIfBlank(preformattedParametersFile);
     this.parametersFile = nullIfBlank(parametersFile);
 
     this.tagsFile = nullIfBlank(tagsFile);
-    this.s3Bucket = nullIfBlank(s3Bucket);
+    this.templateS3Bucket = nullIfBlank(templateS3Bucket);
 
     if (templateFile == null || templateFile.isBlank()) {
       throw new IllegalArgumentException("'template' parameters must be specified");
@@ -71,7 +71,7 @@ public class Params {
     return value;
   }
 
-  public String getS3Bucket() {
-    return s3Bucket;
+  public String getTemplateS3Bucket() {
+    return templateS3Bucket;
   }
 }
