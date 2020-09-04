@@ -60,7 +60,7 @@ public class Out {
     PutObjectRequest putObjectRequest = PutObjectRequest.builder().bucket(bucket).key(s3Key).build();
     regionalClient.putObject(putObjectRequest, RequestBody.fromString(template));
 
-    String url = s3Client.utilities()
+    String url = regionalClient.utilities()
         .getUrl(GetUrlRequest.builder().bucket(bucket).key(s3Key).build()).toExternalForm();
     System.err.println("Template URL is " + url);
     return url;
