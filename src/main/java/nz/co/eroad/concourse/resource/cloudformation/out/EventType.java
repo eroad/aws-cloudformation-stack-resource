@@ -3,32 +3,12 @@ package nz.co.eroad.concourse.resource.cloudformation.out;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-import software.amazon.awssdk.services.cloudformation.model.ResourceStatus;
 import software.amazon.awssdk.services.cloudformation.model.StackEvent;
 import software.amazon.awssdk.services.cloudformation.model.StackStatus;
 
 class EventType {
 
-  private final static Set<String> BAD_EVENTS = new HashSet<>(Arrays.asList(
-      ResourceStatus.UPDATE_FAILED.toString(),
-      ResourceStatus.CREATE_FAILED.toString(),
-      ResourceStatus.DELETE_FAILED.toString(),
-      ResourceStatus.IMPORT_FAILED.toString(),
-      ResourceStatus.IMPORT_ROLLBACK_FAILED.toString(),
-      StackStatus.UPDATE_ROLLBACK_FAILED.toString(),
-      StackStatus.ROLLBACK_FAILED.toString(),
-      StackStatus.CREATE_FAILED.toString(),
-      StackStatus.IMPORT_ROLLBACK_FAILED.toString(),
-      StackStatus.DELETE_FAILED.toString()
-  ));
-  private final static Set<String> WARNING_EVENTS = new HashSet<>(Arrays.asList(
-      StackStatus.UPDATE_ROLLBACK_IN_PROGRESS.toString(),
-      StackStatus.UPDATE_ROLLBACK_COMPLETE.toString(),
-      StackStatus.IMPORT_ROLLBACK_IN_PROGRESS.toString(),
-      StackStatus.IMPORT_ROLLBACK_COMPLETE.toString(),
-      StackStatus.ROLLBACK_COMPLETE.toString(),
-      StackStatus.ROLLBACK_IN_PROGRESS.toString()
-  ));
+
 
   private final static Set<StackStatus> UPDATABLE_EVENTS = new HashSet<>(Arrays.asList(
       StackStatus.CREATE_COMPLETE,
@@ -67,6 +47,12 @@ class EventType {
       StackStatus.CREATE_IN_PROGRESS,
       StackStatus.UPDATE_IN_PROGRESS
       ));
+
+  private final static Set<StackStatus> ROLLBACK_INITIATED_EVENTS = new HashSet<>(Arrays.asList(
+      StackStatus.ROLLBACK_IN_PROGRESS,
+      StackStatus.UPDATE_ROLLBACK_IN_PROGRESS,
+      StackStatus.IMPORT_ROLLBACK_IN_PROGRESS
+  ));
 
 
   static boolean isFailedCreateStack(StackStatus stackStatus) {
@@ -111,12 +97,10 @@ class EventType {
         && stackEvent.stackId().equals(stackEvent.physicalResourceId());
   }
 
-  static boolean isBadEvent(String status) {
-    return BAD_EVENTS.contains(status);
+  static boolean isRollingBack(String stackName, StackEvent stackEvent) {
+    return isStackEvent(stackName, stackEvent)
+        && ROLLBACK_INITIATED_EVENTS.contains(StackStatus.fromValue(stackEvent.resourceStatusAsString()));
   }
 
-  static boolean isWarningEvent(String status) {
-    return WARNING_EVENTS.contains(status);
-  }
 }
 
