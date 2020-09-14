@@ -4,7 +4,6 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Optional;
-import java.util.UUID;
 import nz.co.eroad.concourse.resource.cloudformation.ParsedFiles;
 import nz.co.eroad.concourse.resource.cloudformation.StackOptionsFilesParser;
 import nz.co.eroad.concourse.resource.cloudformation.aws.AwsClientFactory;
@@ -74,7 +73,7 @@ public class Out {
     if (params.getTemplateS3Bucket() != null) {
       templateUrl = uploadTemplate(params.getTemplateS3Bucket(), source.getName(), parsedFiles.getTemplateBody());
     } else if (parsedFiles.getTemplateBody().length() > 51200) {
-      throw new IllegalArgumentException("Template body is too large to directly use, please specify an s3_bucket to upload it too as part of deploy.");
+      throw new IllegalArgumentException("Template body is too large to directly use, please specify an s3_bucket to upload it to.");
     }
 
     Optional<Stack> currentStack = awaitStackStable(source.getName());
@@ -90,13 +89,13 @@ public class Out {
     currentStack.ifPresent(event -> System.err.println("Current stack state is " + event.stackStatusAsString()));
 
 
-    String requstToken = UUID.randomUUID().toString();
+    String requestToken = System.getenv("ATC_EXTERNAL_URL") + "/builds/" + System.getenv("BUILD_ID");
     String stackId;
     if (currentStack.isEmpty() || EventType.isDeletedStack( currentStack.get().stackStatus())) {
-      stackId = createStack(requstToken, source, parsedFiles, templateUrl);
+      stackId = createStack(requestToken, source, parsedFiles, templateUrl);
     } else if (EventType.isExistingStack(currentStack.get().stackStatus())) {
       try {
-        stackId = updateStack(requstToken, source, parsedFiles, templateUrl);
+        stackId = updateStack(requestToken, source, parsedFiles, templateUrl);
       } catch (CloudFormationException e) {
         if (e.awsErrorDetails().errorCode().equals("ValidationError")
             && e.awsErrorDetails().errorMessage()
@@ -117,7 +116,7 @@ public class Out {
       throw new IllegalStateException("Stack is not updatable because it is currently in a state of " + currentStack.get().stackStatusAsString());
     }
 
-    Iterator<StackEvent> stackEvents = new EventTailer(cloudFormationClient, stackId, requstToken);
+    Iterator<StackEvent> stackEvents = new EventTailer(cloudFormationClient, stackId, requestToken);
     if (!stackEvents.hasNext()) {
       throw new IllegalStateException("Should have provided at least one stack event after update!");
     }
