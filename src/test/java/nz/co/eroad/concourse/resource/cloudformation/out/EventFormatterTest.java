@@ -13,8 +13,8 @@ public class EventFormatterTest {
     StackEvent event = StackEvent.builder().timestamp(Instant.MAX)
         .resourceType("EROAD::FAKE::RESOURCE")
         .logicalResourceId("fake-1234").resourceStatus(
-            ResourceStatus.CREATE_FAILED).resourceStatusReason("potato").build();
-    String potato = EventFormatter.format(event, true);
+            ResourceStatus.UPDATE_IN_PROGRESS).resourceStatusReason("potato").build();
+    String potato = EventFormatter.format(event, false);
     System.out.println(potato);
 
 
