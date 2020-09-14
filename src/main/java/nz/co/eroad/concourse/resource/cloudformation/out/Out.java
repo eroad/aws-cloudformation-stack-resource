@@ -144,8 +144,16 @@ public class Out {
   }
 
   private void printEvent(StackEvent stackEvent) {
-    System.err.printf("%s | %s | %s | %s %n", stackEvent.timestamp().toString(), stackEvent.resourceType(), stackEvent.logicalResourceId(),  stackEvent.resourceStatusReason() == null ? stackEvent.resourceStatusAsString() : stackEvent.resourceStatusAsString() + " | " + stackEvent.resourceStatusReason());
-
+    String begin = "";
+    String end = "";
+    if (EventType.isBadEvent(stackEvent.resourceStatusAsString())) {
+      begin = ConsoleColors.RED;
+      end = ConsoleColors.RESET;
+    } else if (EventType.isWarningEvent(stackEvent.resourceStatusAsString())) {
+      begin = ConsoleColors.YELLOW;
+      end = ConsoleColors.RESET;
+    }
+    System.err.printf(begin + "%s | %s | %s | %s %n" + end, stackEvent.timestamp().toString(), stackEvent.resourceType(), stackEvent.logicalResourceId(),  stackEvent.resourceStatusReason() == null ? stackEvent.resourceStatusAsString() : stackEvent.resourceStatusAsString() + " | " + stackEvent.resourceStatusReason());
   }
 
 
