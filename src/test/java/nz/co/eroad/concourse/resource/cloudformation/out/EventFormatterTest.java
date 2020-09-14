@@ -14,7 +14,7 @@ public class EventFormatterTest {
         .resourceType("EROAD::FAKE::RESOURCE")
         .logicalResourceId("fake-1234").resourceStatus(
             ResourceStatus.UPDATE_IN_PROGRESS).resourceStatusReason("potato").build();
-    String potato = EventFormatter.format(event, false);
+    String potato = EventFormatter.format(event, true);
     System.out.println(potato);
 
 

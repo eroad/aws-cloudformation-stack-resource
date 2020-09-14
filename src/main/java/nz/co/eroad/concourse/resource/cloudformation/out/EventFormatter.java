@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import nz.co.eroad.concourse.resource.cloudformation.Colorizer;
 import picocli.CommandLine.Help.Ansi.Style;
 import software.amazon.awssdk.services.cloudformation.model.ResourceStatus;
 import software.amazon.awssdk.services.cloudformation.model.StackEvent;
@@ -42,25 +43,32 @@ public class EventFormatter {
 
   public static String format(StackEvent stackEvent, boolean rollbackInProgress) {
     String resourceStatus = stackEvent.resourceStatusAsString();
-    String colors = "";
-    if (rollbackInProgress) {
-      colors = Style.bg_yellow.on();
-    }
+    String formatted = formatEvents(stackEvent);
+
+    Style color;
+
     if (GOOD_EVENTS.contains(resourceStatus)) {
-      colors = colors + Style.fg_green.on();
+      color = Style.fg_green;
     } else if (BAD_EVENTS.contains(resourceStatus)) {
-      colors = colors + Style.fg_red.on();
+      color = Style.fg_red;
     } else {
-      colors = colors + Style.fg_cyan.on();
+      color = Style.fg_cyan;
     }
-    return colors + stackEvent.timestamp().toString() + " | " +
+    if (rollbackInProgress) {
+      return Colorizer.colorize(formatted, Style.bg_yellow, color);
+    } else {
+      return Colorizer.colorize(formatted, color);
+    }
+
+
+  }
+
+  private static String formatEvents(StackEvent stackEvent) {
+    return stackEvent.timestamp().toString() + " | " +
         stackEvent.resourceType() + " | " +
         stackEvent.logicalResourceId() + " | " +
         stackEvent.resourceStatusAsString() +
-        Optional.ofNullable(stackEvent.resourceStatusReason()).map(reason -> " | " + reason).orElse("") +
-        Style.reset.on();
-
-
+        Optional.ofNullable(stackEvent.resourceStatusReason()).map(reason -> " | " + reason).orElse("");
   }
 
 

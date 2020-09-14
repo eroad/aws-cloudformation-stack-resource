@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.Optional;
 import java.util.UUID;
+import nz.co.eroad.concourse.resource.cloudformation.Colorizer;
 import nz.co.eroad.concourse.resource.cloudformation.ParsedFiles;
 import nz.co.eroad.concourse.resource.cloudformation.StackOptionsFilesParser;
 import nz.co.eroad.concourse.resource.cloudformation.aws.AwsClientFactory;
@@ -13,6 +14,7 @@ import nz.co.eroad.concourse.resource.cloudformation.pojo.Params;
 import nz.co.eroad.concourse.resource.cloudformation.pojo.Source;
 import nz.co.eroad.concourse.resource.cloudformation.pojo.Version;
 import nz.co.eroad.concourse.resource.cloudformation.pojo.VersionMetadata;
+import picocli.CommandLine.Help.Ansi.Style;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
@@ -104,7 +106,7 @@ public class Out {
         if (e.awsErrorDetails().errorCode().equals("ValidationError")
             && e.awsErrorDetails().errorMessage()
             .equals("No updates are to be performed.")) {
-          System.err.println("No updates are needed.");
+          System.err.println(Colorizer.colorize("No updates are needed.", Style.fg_green));
 
           Version version = Version.fromStack(currentStack.get());
           Metadata status = new Metadata("status", currentStack.get().stackStatusAsString());
@@ -208,7 +210,7 @@ public class Out {
       updateStackRequest.templateURL(templateUrl);
     }
     String stackId = cloudFormationClient.updateStack(updateStackRequest.build()).stackId();
-    System.err.println("Stack update begun:\n");
+    System.err.println(Colorizer.colorize("Stack update begun", Style.underline));
     return stackId;
   }
 
