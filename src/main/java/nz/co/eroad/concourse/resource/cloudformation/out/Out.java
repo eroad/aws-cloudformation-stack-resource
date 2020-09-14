@@ -69,7 +69,7 @@ public class Out {
   }
   
   public VersionMetadata run(String workingDirectory, Params params) {
-    System.err.println("Reticulating splines.\n");
+    System.err.println(Colorizer.colorize("Reticulating splines.\n", Style.fg_magenta));
     ParsedFiles parsedFiles = parametersParser.load(workingDirectory, params);
 
     String templateUrl = null;
@@ -190,7 +190,7 @@ public class Out {
       createStackRequest.templateURL(templateUrl);
     }
     String stackId = cloudFormationClient.createStack(createStackRequest.build()).stackId();
-    System.err.println("Stack creation begun:\n");
+    System.err.println("\nStack creation begun:\n");
     return stackId;
   }
 
