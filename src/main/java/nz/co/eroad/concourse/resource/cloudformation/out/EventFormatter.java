@@ -55,7 +55,7 @@ public class EventFormatter {
       color = Style.fg_cyan;
     }
     if (rollbackInProgress) {
-      return Colorizer.colorize(formatted, Style.bg_yellow, color);
+      return Colorizer.colorize(formatted, Style.bg_magenta, color);
     } else {
       return Colorizer.colorize(formatted, color);
     }
