@@ -15,6 +15,7 @@ import nz.co.eroad.concourse.resource.cloudformation.pojo.Version;
 import nz.co.eroad.concourse.resource.cloudformation.pojo.VersionInput;
 import nz.co.eroad.concourse.resource.cloudformation.pojo.VersionMetadata;
 import picocli.CommandLine;
+import picocli.CommandLine.Help.Ansi.Style;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.ParameterException;
 import picocli.CommandLine.Parameters;
@@ -101,7 +102,7 @@ public class ConcourseResourceCommand implements Runnable {
           .setExecutionExceptionHandler(
               (e, commandLine, parseResult) -> {
                 //ex.printStackTrace(); // no stack trace
-                commandLine.getErr().println(e.getMessage());
+                commandLine.getErr().println(Colorizer.colorize(e.getMessage(), Style.fg_red));
                 return commandLine.getCommandSpec().exitCodeOnExecutionException();
               }).execute(args));
     }
