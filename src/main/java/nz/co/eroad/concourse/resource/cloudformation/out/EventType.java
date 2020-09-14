@@ -8,6 +8,8 @@ import software.amazon.awssdk.services.cloudformation.model.StackStatus;
 
 class EventType {
 
+
+
   private final static Set<StackStatus> UPDATABLE_EVENTS = new HashSet<>(Arrays.asList(
       StackStatus.CREATE_COMPLETE,
       StackStatus.UPDATE_COMPLETE,
@@ -45,6 +47,12 @@ class EventType {
       StackStatus.CREATE_IN_PROGRESS,
       StackStatus.UPDATE_IN_PROGRESS
       ));
+
+  private final static Set<StackStatus> ROLLBACK_INITIATED_EVENTS = new HashSet<>(Arrays.asList(
+      StackStatus.ROLLBACK_IN_PROGRESS,
+      StackStatus.UPDATE_ROLLBACK_IN_PROGRESS,
+      StackStatus.IMPORT_ROLLBACK_IN_PROGRESS
+  ));
 
 
   static boolean isFailedCreateStack(StackStatus stackStatus) {
@@ -89,4 +97,10 @@ class EventType {
         && stackEvent.stackId().equals(stackEvent.physicalResourceId());
   }
 
+  static boolean isRollingBack(String stackName, StackEvent stackEvent) {
+    return isStackEvent(stackName, stackEvent)
+        && ROLLBACK_INITIATED_EVENTS.contains(StackStatus.fromValue(stackEvent.resourceStatusAsString()));
+  }
+
 }
+

@@ -72,13 +72,16 @@ public class Out {
 
     String templateUrl = null;
     if (params.getTemplateS3Bucket() != null) {
-      templateUrl = uploadTemplate(params.getTemplateS3Bucket(), source.getName(), parsedFiles.getTemplateBody());
+      templateUrl = uploadTemplate(params.getTemplateS3Bucket(), source.getName(),
+          parsedFiles.getTemplateBody());
     } else if (parsedFiles.getTemplateBody().length() > 51200) {
-      throw new IllegalArgumentException("Template body is too large to directly use, please specify an s3_bucket to upload it too as part of deploy.");
+      throw new IllegalArgumentException(
+          "Template body is too large to directly use, please specify an s3_bucket to upload it to.");
     }
 
     Optional<Stack> currentStack = awaitStackStable(source.getName());
-    if (currentStack.isPresent() && EventType.isFailedCreateStack(currentStack.get().stackStatus())) {
+    if (currentStack.isPresent() && EventType
+        .isFailedCreateStack(currentStack.get().stackStatus())) {
       if (Boolean.TRUE.equals(params.getResolveFailedCreate())) {
         System.err.println("Previous stack failed to create, deleting now.");
         DeleteStackRequest deleteStackRequest = DeleteStackRequest.builder()
@@ -87,16 +90,16 @@ public class Out {
       }
       currentStack = awaitStackStable(source.getName());
     }
-    currentStack.ifPresent(event -> System.err.println("Current stack state is " + event.stackStatusAsString()));
+    currentStack.ifPresent(
+        event -> System.err.println("Current stack state is " + event.stackStatusAsString()));
 
-
-    String requstToken = UUID.randomUUID().toString();
+    String requestToken = UUID.randomUUID().toString() + "-concourse-" + System.getenv("BUILD_ID");
     String stackId;
-    if (currentStack.isEmpty() || EventType.isDeletedStack( currentStack.get().stackStatus())) {
-      stackId = createStack(requstToken, source, parsedFiles, templateUrl);
+    if (currentStack.isEmpty() || EventType.isDeletedStack(currentStack.get().stackStatus())) {
+      stackId = createStack(requestToken, source, parsedFiles, templateUrl);
     } else if (EventType.isExistingStack(currentStack.get().stackStatus())) {
       try {
-        stackId = updateStack(requstToken, source, parsedFiles, templateUrl);
+        stackId = updateStack(requestToken, source, parsedFiles, templateUrl);
       } catch (CloudFormationException e) {
         if (e.awsErrorDetails().errorCode().equals("ValidationError")
             && e.awsErrorDetails().errorMessage()
@@ -114,19 +117,27 @@ public class Out {
         throw e;
       }
     } else {
-      throw new IllegalStateException("Stack is not updatable because it is currently in a state of " + currentStack.get().stackStatusAsString());
+      throw new IllegalStateException(
+          "Stack is not updatable because it is currently in a state of " + currentStack.get()
+              .stackStatusAsString());
     }
 
-    Iterator<StackEvent> stackEvents = new EventTailer(cloudFormationClient, stackId, requstToken);
+    Iterator<StackEvent> stackEvents = new EventTailer(cloudFormationClient, stackId, requestToken);
     if (!stackEvents.hasNext()) {
-      throw new IllegalStateException("Should have provided at least one stack event after update!");
+      throw new IllegalStateException(
+          "Should have provided at least one stack event after update!");
     }
     StackEvent first = stackEvents.next();
     StackEvent last = first;
-    printEvent(last);
+    boolean isRollingBack = EventType.isRollingBack(source.getName(), last);
+    System.err.println(EventFormatter.format(last, isRollingBack));
+
     while (stackEvents.hasNext()) {
       last = stackEvents.next();
-      printEvent(last);
+      if (EventType.isRollingBack(source.getName(), last)) {
+        isRollingBack = true;
+      }
+      System.err.println(EventFormatter.format(last, isRollingBack));
     }
 
     if (!EventType.isSuccessEvent(source.getName(), last)) {
@@ -134,18 +145,12 @@ public class Out {
           "Stack failed to create or update. It's state is now " + last.resourceStatusAsString());
     }
 
-
     Version version = new Version(first.physicalResourceId(), first.timestamp());
     Metadata status = new Metadata("status", last.resourceStatusAsString());
     return new VersionMetadata(
         version,
         Collections.singletonList(status)
     );
-  }
-
-  private void printEvent(StackEvent stackEvent) {
-    System.err.printf("%s | %s | %s | %s %n", stackEvent.timestamp().toString(), stackEvent.resourceType(), stackEvent.logicalResourceId(),  stackEvent.resourceStatusReason() == null ? stackEvent.resourceStatusAsString() : stackEvent.resourceStatusAsString() + " | " + stackEvent.resourceStatusReason());
-
   }
 
 
