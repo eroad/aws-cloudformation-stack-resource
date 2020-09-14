@@ -2,6 +2,7 @@ package nz.co.eroad.concourse.resource.cloudformation.out;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import picocli.CommandLine.Help.Ansi.Style;
 import software.amazon.awssdk.services.cloudformation.model.ResourceStatus;
@@ -50,14 +51,17 @@ public class EventFormatter {
     } else if (BAD_EVENTS.contains(resourceStatus)) {
       colors = colors + Style.fg_red.on();
     } else {
-      colors = colors + Style.fg_white.on();
+      colors = colors + Style.fg_cyan.on();
     }
-    return colors + formatEvent(stackEvent) + Style.reset.on();
+    return colors + stackEvent.timestamp().toString() + " | " +
+        stackEvent.resourceType() + " | " +
+        stackEvent.logicalResourceId() + " | " +
+        stackEvent.resourceStatusAsString() +
+        Optional.ofNullable(stackEvent.resourceStatusReason()).map(reason -> " | " + reason).orElse("") +
+        Style.reset.on();
+
 
   }
 
 
-  private static String formatEvent(StackEvent stackEvent) {
-    return String.format("%s | %s | %s | %s", stackEvent.timestamp().toString(), stackEvent.resourceType(), stackEvent.logicalResourceId(),  stackEvent.resourceStatusReason() == null ? stackEvent.resourceStatusAsString() : stackEvent.resourceStatusAsString() + " | " + stackEvent.resourceStatusReason());
-  }
 }
