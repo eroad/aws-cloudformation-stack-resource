@@ -190,7 +190,7 @@ public class Out {
       createStackRequest.templateURL(templateUrl);
     }
     String stackId = cloudFormationClient.createStack(createStackRequest.build()).stackId();
-    System.err.println("\nStack creation begun:\n");
+    System.err.println(Colorizer.colorize("\nStack creation begun", Style.underline));
     return stackId;
   }
 
@@ -210,7 +210,7 @@ public class Out {
       updateStackRequest.templateURL(templateUrl);
     }
     String stackId = cloudFormationClient.updateStack(updateStackRequest.build()).stackId();
-    System.err.println(Colorizer.colorize("Stack update begun", Style.underline));
+    System.err.println(Colorizer.colorize("\nStack update begun", Style.underline));
     return stackId;
   }
 
