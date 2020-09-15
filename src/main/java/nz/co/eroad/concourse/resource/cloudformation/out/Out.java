@@ -14,6 +14,7 @@ import nz.co.eroad.concourse.resource.cloudformation.pojo.Params;
 import nz.co.eroad.concourse.resource.cloudformation.pojo.Source;
 import nz.co.eroad.concourse.resource.cloudformation.pojo.Version;
 import nz.co.eroad.concourse.resource.cloudformation.pojo.VersionMetadata;
+import org.apache.commons.codec.binary.Base32;
 import picocli.CommandLine.Help.Ansi.Style;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
@@ -95,7 +96,8 @@ public class Out {
     currentStack.ifPresent(
         event -> System.err.println("Current stack state is " + event.stackStatusAsString()));
 
-    String requestToken = UUID.randomUUID().toString() + "-concourse-" + System.getenv("BUILD_ID");
+    String concourseUrl = System.getenv("ATC_EXTERNAL_URL") + "/builds/" + System.getenv("BUILD_ID");
+    String requestToken = UUID.randomUUID() + "-" + new Base32().encodeToString(concourseUrl.getBytes()) ;
     String stackId;
     if (currentStack.isEmpty() || EventType.isDeletedStack(currentStack.get().stackStatus())) {
       stackId = createStack(requestToken, source, parsedFiles, templateUrl);
