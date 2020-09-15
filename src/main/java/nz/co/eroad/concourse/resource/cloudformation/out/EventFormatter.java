@@ -51,14 +51,13 @@ public class EventFormatter {
       color = Style.fg_green;
     } else if (BAD_EVENTS.contains(resourceStatus)) {
       color = Style.fg_red;
+    } else if (rollbackInProgress){
+      color = Style.fg_yellow;
     } else {
       color = Style.fg_cyan;
     }
-    if (rollbackInProgress) {
-      return Colorizer.colorize(formatted, Style.bg_magenta, color);
-    } else {
-      return Colorizer.colorize(formatted, color);
-    }
+
+    return Colorizer.colorize(formatted, color);
 
 
   }
