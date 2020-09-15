@@ -14,6 +14,7 @@ import nz.co.eroad.concourse.resource.cloudformation.pojo.Source;
 import nz.co.eroad.concourse.resource.cloudformation.pojo.Version;
 import nz.co.eroad.concourse.resource.cloudformation.pojo.VersionInput;
 import nz.co.eroad.concourse.resource.cloudformation.pojo.VersionMetadata;
+import nz.co.eroad.concourse.resource.cloudformation.util.Colorizer;
 import picocli.CommandLine;
 import picocli.CommandLine.Help.Ansi.Style;
 import picocli.CommandLine.Model.CommandSpec;

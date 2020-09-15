@@ -4,9 +4,9 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Optional;
-import java.util.UUID;
-import nz.co.eroad.concourse.resource.cloudformation.Colorizer;
+import nz.co.eroad.concourse.resource.cloudformation.util.Colorizer;
 import nz.co.eroad.concourse.resource.cloudformation.ParsedFiles;
+import nz.co.eroad.concourse.resource.cloudformation.util.RandomString;
 import nz.co.eroad.concourse.resource.cloudformation.StackOptionsFilesParser;
 import nz.co.eroad.concourse.resource.cloudformation.aws.AwsClientFactory;
 import nz.co.eroad.concourse.resource.cloudformation.pojo.Metadata;
@@ -97,7 +97,7 @@ public class Out {
         event -> System.err.println("Current stack state is " + event.stackStatusAsString()));
 
     String concourseUrl = System.getenv("ATC_EXTERNAL_URL") + "/builds/" + System.getenv("BUILD_ID");
-    String requestToken = UUID.randomUUID() + "-" + new Base32().encodeToString(concourseUrl.getBytes()) ;
+    String requestToken = RandomString.randomString(8) + "-" + new Base32().encodeToString(concourseUrl.getBytes()) ;
     String stackId;
     if (currentStack.isEmpty() || EventType.isDeletedStack(currentStack.get().stackStatus())) {
       stackId = createStack(requestToken, source, parsedFiles, templateUrl);

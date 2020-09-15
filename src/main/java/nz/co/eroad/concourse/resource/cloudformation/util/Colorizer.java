@@ -1,4 +1,4 @@
-package nz.co.eroad.concourse.resource.cloudformation;
+package nz.co.eroad.concourse.resource.cloudformation.util;
 
 import picocli.CommandLine.Help.Ansi.Style;
 

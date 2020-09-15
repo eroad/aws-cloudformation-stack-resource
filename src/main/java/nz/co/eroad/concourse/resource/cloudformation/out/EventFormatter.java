@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
-import nz.co.eroad.concourse.resource.cloudformation.Colorizer;
+import nz.co.eroad.concourse.resource.cloudformation.util.Colorizer;
 import picocli.CommandLine.Help.Ansi.Style;
 import software.amazon.awssdk.services.cloudformation.model.ResourceStatus;
 import software.amazon.awssdk.services.cloudformation.model.StackEvent;
