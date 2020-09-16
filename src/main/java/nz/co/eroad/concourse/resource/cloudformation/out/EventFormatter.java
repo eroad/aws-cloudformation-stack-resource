@@ -48,7 +48,11 @@ public class EventFormatter {
     Style color;
 
     if (GOOD_EVENTS.contains(resourceStatus)) {
-      color = Style.fg_green;
+      if (rollbackInProgress) {
+        color = Style.fg_magenta;
+      } else {
+        color = Style.fg_green;
+      }
     } else if (BAD_EVENTS.contains(resourceStatus)) {
       color = Style.fg_red;
     } else if (rollbackInProgress){
