@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Optional;
+import nz.co.eroad.concourse.resource.cloudformation.EventType;
 import nz.co.eroad.concourse.resource.cloudformation.util.Colorizer;
 import nz.co.eroad.concourse.resource.cloudformation.ParsedFiles;
 import nz.co.eroad.concourse.resource.cloudformation.util.RandomString;

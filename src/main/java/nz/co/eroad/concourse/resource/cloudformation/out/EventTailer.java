@@ -1,7 +1,7 @@
 package nz.co.eroad.concourse.resource.cloudformation.out;
 
-import static nz.co.eroad.concourse.resource.cloudformation.out.EventType.isStartingEvent;
-import static nz.co.eroad.concourse.resource.cloudformation.out.EventType.isStableStack;
+import static nz.co.eroad.concourse.resource.cloudformation.EventType.isStartingEvent;
+import static nz.co.eroad.concourse.resource.cloudformation.EventType.isStableStack;
 
 import java.time.Duration;
 import java.time.Instant;
