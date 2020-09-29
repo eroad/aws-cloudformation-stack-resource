@@ -1,4 +1,4 @@
-package nz.co.eroad.concourse.resource.cloudformation.out;
+package nz.co.eroad.concourse.resource.cloudformation;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -6,7 +6,7 @@ import java.util.Set;
 import software.amazon.awssdk.services.cloudformation.model.StackEvent;
 import software.amazon.awssdk.services.cloudformation.model.StackStatus;
 
-class EventType {
+public class EventType {
 
 
 
@@ -20,7 +20,9 @@ class EventType {
   private final static Set<StackStatus> FAILED_CREATE_EVENTS = new HashSet<>(Arrays.asList(
       StackStatus.CREATE_FAILED,
       StackStatus.ROLLBACK_FAILED,
-      StackStatus.ROLLBACK_COMPLETE
+      StackStatus.ROLLBACK_COMPLETE,
+      StackStatus.IMPORT_ROLLBACK_FAILED,
+      StackStatus.IMPORT_ROLLBACK_COMPLETE
   ));
 
   private final static Set<StackStatus> TERMINATING_EVENTS = new HashSet<>(Arrays.asList(
@@ -55,38 +57,38 @@ class EventType {
   ));
 
 
-  static boolean isFailedCreateStack(StackStatus stackStatus) {
+  public static boolean isFailedCreateStack(StackStatus stackStatus) {
     return FAILED_CREATE_EVENTS.contains(stackStatus);
   }
 
-  static boolean isStableStack(String stackName, StackEvent stackEvent) {
+  public static boolean isStableStack(String stackName, StackEvent stackEvent) {
     return isStackEvent(stackName, stackEvent)
         && TERMINATING_EVENTS.contains(StackStatus.fromValue(stackEvent.resourceStatusAsString()));
   }
 
-  static boolean isStableStack(StackStatus stackStatus) {
+  public static boolean isStableStack(StackStatus stackStatus) {
     return TERMINATING_EVENTS.contains(stackStatus);
   }
 
 
 
-  static boolean isExistingStack(StackStatus stackStatus) {
+  public static boolean isExistingStack(StackStatus stackStatus) {
     return UPDATABLE_EVENTS.contains(stackStatus);
   }
 
 
-  static boolean isSuccessEvent(String stackName, StackEvent stackEvent) {
+  public static boolean isSuccessEvent(String stackName, StackEvent stackEvent) {
     return isStackEvent(stackName, stackEvent)
         && SUCCESS_EVENTS.contains(StackStatus.fromValue(stackEvent.resourceStatusAsString()));
   }
-  static boolean isStartingEvent(String stackName, StackEvent stackEvent) {
+  public static boolean isStartingEvent(String stackName, StackEvent stackEvent) {
 
     return isStackEvent(stackName, stackEvent)
         && "User Initiated".equals(stackEvent.resourceStatusReason())
         && STARTING_EVENTS.contains(StackStatus.fromValue(stackEvent.resourceStatusAsString()));
   }
 
-  static boolean isDeletedStack(StackStatus stackStatus) {
+  public static boolean isDeletedStack(StackStatus stackStatus) {
     return stackStatus == StackStatus.DELETE_COMPLETE;
   }
 
@@ -97,7 +99,7 @@ class EventType {
         && stackEvent.stackId().equals(stackEvent.physicalResourceId());
   }
 
-  static boolean isRollingBack(String stackName, StackEvent stackEvent) {
+  public static boolean isRollingBack(String stackName, StackEvent stackEvent) {
     return isStackEvent(stackName, stackEvent)
         && ROLLBACK_INITIATED_EVENTS.contains(StackStatus.fromValue(stackEvent.resourceStatusAsString()));
   }

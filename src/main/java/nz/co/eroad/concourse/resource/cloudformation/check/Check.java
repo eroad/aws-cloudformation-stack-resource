@@ -3,6 +3,7 @@ package nz.co.eroad.concourse.resource.cloudformation.check;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import nz.co.eroad.concourse.resource.cloudformation.EventType;
 import nz.co.eroad.concourse.resource.cloudformation.aws.AwsClientFactory;
 import nz.co.eroad.concourse.resource.cloudformation.pojo.Source;
 import nz.co.eroad.concourse.resource.cloudformation.pojo.Version;
@@ -11,6 +12,7 @@ import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.cloudformation.model.CloudFormationException;
 import software.amazon.awssdk.services.cloudformation.model.DescribeStacksResponse;
 import software.amazon.awssdk.services.cloudformation.model.Stack;
+import software.amazon.awssdk.services.cloudformation.model.StackStatus;
 
 public class Check {
 
@@ -27,17 +29,12 @@ public class Check {
       return Collections.emptyList();
     } else {
       Stack stack = found.get();
-      switch (stack.stackStatus()) {
-        case CREATE_COMPLETE:
-        case UPDATE_COMPLETE:
-        case ROLLBACK_COMPLETE:
-        case IMPORT_COMPLETE:
-          Version newVersion = Version.fromStack(stack);
-          return Collections.singletonList(newVersion);
-        case DELETE_COMPLETE:
-        case CREATE_FAILED:
-          return Collections.emptyList();
-        default:
+      if (EventType.isExistingStack(stack.stackStatus())) {
+        Version newVersion = Version.fromStack(stack);
+        return Collections.singletonList(newVersion);
+      } else if (EventType.isFailedCreateStack(stack.stackStatus()) || stack.stackStatus() == StackStatus.DELETE_COMPLETE) {
+        return Collections.emptyList();
+      } else {
           if (existing == null) {
             return Collections.emptyList();
           } else {

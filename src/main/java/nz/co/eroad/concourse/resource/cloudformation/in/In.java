@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import nz.co.eroad.concourse.resource.cloudformation.EventType;
 import nz.co.eroad.concourse.resource.cloudformation.aws.AwsClientFactory;
 import nz.co.eroad.concourse.resource.cloudformation.pojo.Metadata;
 import nz.co.eroad.concourse.resource.cloudformation.pojo.Source;
@@ -66,20 +67,18 @@ public class In {
       throw new IllegalStateException("Stack no longer exists!");
     }
     Stack found = describeStacksResponse.stacks().get(0);
-    switch (found.stackStatus()) {
-      case CREATE_COMPLETE:
-      case UPDATE_COMPLETE:
-      case ROLLBACK_COMPLETE:
-      case IMPORT_COMPLETE:
-        Version version = Version.fromStack(found);
-        if (!existing.equals(version)) {
-          throw new IllegalStateException("Cannot get stack info, stack has been updated concurrently." + existing.getArn() + "|" + existing.getTime() + " should be " + version.getArn() + "|" + version.getTime());
-        }
-        populateFiles(workingDirectory, found);
-        Metadata status = new Metadata("status", found.stackStatusAsString());
-        return new VersionMetadata(version, Collections.singletonList(status));
-      default:
-        throw new IllegalStateException("Cannot get stack info, current state is " + found.stackStatus().toString());
+    if (EventType.isExistingStack(found.stackStatus())) {
+      Version version = Version.fromStack(found);
+      if (!existing.equals(version)) {
+        throw new IllegalStateException(
+            "Cannot get stack info, stack has been updated concurrently." + existing.getArn() + "|"
+                + existing.getTime() + " should be " + version.getArn() + "|" + version.getTime());
+      }
+      populateFiles(workingDirectory, found);
+      Metadata status = new Metadata("status", found.stackStatusAsString());
+      return new VersionMetadata(version, Collections.singletonList(status));
+    } else {
+      throw new IllegalStateException("Cannot get stack info, current state is " + found.stackStatus().toString());
     }
 
   }
