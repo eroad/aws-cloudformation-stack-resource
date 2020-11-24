@@ -137,10 +137,10 @@
           <mainClass>nz.co.eroad.concourse.resource.cloudformation.ConcourseResourceCommand</mainClass>
           <imageName>cloudformation-resource</imageName>
           <buildArgs>
-            --static
-            --no-fallback
-            --libc=musl
-            --enable-url-protocols=http,https
+            <buildArg>--static</buildArg>
+            <buildArg>--no-fallback</buildArg>
+            <buildArg>--libc=musl</buildArg>
+            <buildArg>--enable-url-protocols=http,https</buildArg>
           </buildArgs>
         </configuration>
       </plugin>
