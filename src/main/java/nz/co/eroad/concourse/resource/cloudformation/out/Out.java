@@ -80,7 +80,7 @@ public class Out {
           parsedFiles.getTemplateBody());
     } else if (parsedFiles.getTemplateBody().length() > 51200) {
       throw new IllegalArgumentException(
-          "Template body is too large to directly use, please specify an s3_bucket to upload it to.");
+          "Template body is too large to directly use, please specify a 'template_s3_bucket' to upload it to.");
     }
 
     Optional<Stack> currentStack = awaitStackStable(source.getName());
