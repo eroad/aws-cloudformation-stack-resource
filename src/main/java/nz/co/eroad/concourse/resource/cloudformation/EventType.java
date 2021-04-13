@@ -1,10 +1,11 @@
 package nz.co.eroad.concourse.resource.cloudformation;
 
+import software.amazon.awssdk.services.cloudformation.model.StackEvent;
+import software.amazon.awssdk.services.cloudformation.model.StackStatus;
+
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-import software.amazon.awssdk.services.cloudformation.model.StackEvent;
-import software.amazon.awssdk.services.cloudformation.model.StackStatus;
 
 public class EventType {
 
@@ -56,6 +57,11 @@ public class EventType {
       StackStatus.IMPORT_ROLLBACK_IN_PROGRESS
   ));
 
+  private final static Set<StackStatus> USER_INITIATED_ROLLBACK_EVENTS = new HashSet<>(Arrays.asList(
+      StackStatus.ROLLBACK_IN_PROGRESS,
+      StackStatus.DELETE_IN_PROGRESS
+  ));
+
 
   public static boolean isFailedCreateStack(StackStatus stackStatus) {
     return FAILED_CREATE_EVENTS.contains(stackStatus);
@@ -86,6 +92,12 @@ public class EventType {
     return isStackEvent(stackName, stackEvent)
         && "User Initiated".equals(stackEvent.resourceStatusReason())
         && STARTING_EVENTS.contains(StackStatus.fromValue(stackEvent.resourceStatusAsString()));
+  }
+
+  public static boolean isUserInitiatedRollback(String stackName, StackEvent stackEvent) {
+    return isStackEvent(stackName, stackEvent)
+            && "User Initiated".equals(stackEvent.resourceStatusReason())
+            && USER_INITIATED_ROLLBACK_EVENTS.contains(StackStatus.fromValue(stackEvent.resourceStatusAsString()));
   }
 
   public static boolean isDeletedStack(StackStatus stackStatus) {

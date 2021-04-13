@@ -1,35 +1,38 @@
 package nz.co.eroad.concourse.resource.cloudformation.out;
 
-import static nz.co.eroad.concourse.resource.cloudformation.EventType.isStartingEvent;
-import static nz.co.eroad.concourse.resource.cloudformation.EventType.isStableStack;
+import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
+import software.amazon.awssdk.services.cloudformation.model.DescribeStackEventsRequest;
+import software.amazon.awssdk.services.cloudformation.model.StackEvent;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayDeque;
 import java.util.Iterator;
-import java.util.Stack;
-import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
-import software.amazon.awssdk.services.cloudformation.model.DescribeStackEventsRequest;
-import software.amazon.awssdk.services.cloudformation.model.StackEvent;
+import java.util.Queue;
+
+import static nz.co.eroad.concourse.resource.cloudformation.EventType.*;
 
 class EventTailer implements Iterator<StackEvent> {
 
 
   private final CloudFormationClient cloudFormationClient;
   private final String stackId;
-  private final String requestToken;
+  private final String originalRequestToken;
+  private String currentRequestToken;
   private final String stackName;
 
   private StackEvent lastEvent;
 
   private Instant nextUpdate = Instant.now();
-  private final Stack<StackEvent> stackEvents = new Stack<>();
+  private final Queue<StackEvent> stackEvents = new ArrayDeque<>();
 
   EventTailer(CloudFormationClient cloudFormationClient, String stackId, String requestToken) {
     this.stackName = nameFromId(stackId);
     this.cloudFormationClient = cloudFormationClient;
     this.stackId = stackId;
-    this.requestToken = requestToken;
+    this.originalRequestToken = requestToken;
+    this.currentRequestToken = requestToken;
   }
 
   @Override
@@ -53,7 +56,7 @@ class EventTailer implements Iterator<StackEvent> {
         throw new RuntimeException(e);
       }
     }
-    this.lastEvent = stackEvents.pop();
+    this.lastEvent = stackEvents.poll();
     return lastEvent;
   }
 
@@ -71,17 +74,39 @@ class EventTailer implements Iterator<StackEvent> {
         .stackName(stackId)
         .build();
 
+    ArrayDeque<StackEvent> unseenEventsStack = new ArrayDeque<>();
+
     for (StackEvent next : cloudFormationClient.describeStackEventsPaginator(describeStackEventsRequest).stackEvents()) {
-      if (next.equals(lastEvent)) {
+      if (next.equals(lastEvent)) { //at end of un-seen events
         break;
-      } else if (next.clientRequestToken().equals(requestToken)) {
-        stackEvents.add(next);
-        if(isStartingEvent(stackName, next)) {
-          break;
-        }
+      }
+
+      unseenEventsStack.addFirst(next);
+
+      if(isStartingEvent(stackName, next) && originalRequestToken.contains(next.clientRequestToken())) { //at beginning of this stack update
+        break;
       }
     }
 
+
+
+    StackEvent oldestSeen = lastEvent;
+    for (StackEvent oldestUnseen : unseenEventsStack) {
+
+      // Request token changes during user initiated rollback. Only catch user initiated rollbacks during updates.
+      if (oldestSeen != null //make sure this happened in progress
+              && oldestSeen.clientRequestToken().equals(currentRequestToken)
+              && !isStableStack(stackName, oldestSeen) //ignore 'continue rollback' request
+              && isUserInitiatedRollback(stackName, oldestUnseen)
+      ) {
+        currentRequestToken = oldestUnseen.clientRequestToken();
+      }
+      if (!currentRequestToken.equals(oldestUnseen.clientRequestToken())) { //no longer belongs to this stack update request
+        break;
+      }
+      stackEvents.add(oldestUnseen);
+      oldestSeen = oldestUnseen;
+    }
 
   }
 
