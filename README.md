@@ -31,12 +31,13 @@ Pulls down stack outputs, resource IDs, and metadata.
 
 Create, update, or delete the stack. The `parameters` and `tags` data should by a simple key-value hash of names and values (e.g. `{"MyName":"MyValue"}`).
 
- * **`template`** - path to a CloudFormation template (do not configure when enabling `delete`)
+ * `template` - path to a CloudFormation template
  * `parameters` - path to a JSON file
  * `parameters_aws` - path to a aws cloudformation formatted JSON file
  * `tags` - path to a JSON file
  * `capabilities` - array of additional [capabilities](http://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/API_CreateStack.html) (e.g. `CAPABILITY_IAM`)
  * `resolve_failed_create` - set to `true` automatically delete stacks that have failed to create
+ * `template_s3_bucket` - Optional, set to a bucket concourse has IAM permission to write to, if you'd like this resource to upload the template before deploying. This can allow you to use templates larger than 5120 charactesr.
 
 
 ## Installation
